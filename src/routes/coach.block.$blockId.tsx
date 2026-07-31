@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EXERCISE_LIBRARY, WORKOUT_TITLES } from "@/lib/types";
+import { WORKOUT_TITLES } from "@/lib/types";
 import type { Week, Workout } from "@/lib/types";
 
 export const Route = createFileRoute("/coach/block/$blockId")({
