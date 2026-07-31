@@ -90,6 +90,7 @@ const initialState = (): AppState => ({
 });
 
 interface Ctx {
+  hydrated: boolean;
   state: AppState;
   setState: (fn: (s: AppState) => AppState) => void;
   user: User | null;
@@ -170,6 +171,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
+      hydrated,
       state,
       setState,
       user,
@@ -180,7 +182,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateBlock,
       notify,
     }),
-    [state, setState, user, login, logout, theme, updateBlock, notify],
+    [hydrated, state, setState, user, login, logout, theme, updateBlock, notify],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

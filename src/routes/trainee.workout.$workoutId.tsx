@@ -34,14 +34,14 @@ export const Route = createFileRoute("/trainee/workout/$workoutId")({
 
 function PerformWorkout() {
   const { workoutId } = Route.useParams();
-  const { state, user, updateBlock, notify } = useStore();
+  const { state, user, updateBlock, notify, hydrated } = useStore();
   const navigate = useNavigate();
   const [skipTarget, setSkipTarget] = useState<{ exId: string; setId?: string } | null>(null);
   const [skipReason, setSkipReason] = useState("");
 
   useEffect(() => {
-    if (!user) navigate({ to: "/" });
-  }, [user, navigate]);
+    if (hydrated && !user) navigate({ to: "/" });
+  }, [hydrated, user, navigate]);
 
   const block = state.blocks.find((b) =>
     b.weeks.some((w) => w.workouts.some((x) => x.id === workoutId)),

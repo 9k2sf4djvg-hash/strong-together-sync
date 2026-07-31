@@ -18,13 +18,14 @@ export const Route = createFileRoute("/trainee/")({
 });
 
 function TraineeHome() {
-  const { state, user } = useStore();
+  const { state, user, hydrated } = useStore();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) navigate({ to: "/" });
     else if (user.role !== "trainee") navigate({ to: "/coach" });
-  }, [user, navigate]);
+  }, [hydrated, user, navigate]);
 
   if (!user || user.role !== "trainee") return null;
 

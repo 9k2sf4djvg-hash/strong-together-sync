@@ -34,13 +34,13 @@ export const Route = createFileRoute("/coach/block/$blockId")({
 
 function BlockPage() {
   const { blockId } = Route.useParams();
-  const { state, user, updateBlock, notify } = useStore();
+  const { state, user, updateBlock, notify, hydrated } = useStore();
   const navigate = useNavigate();
   const [editing, setEditing] = useState<{ week: number; workoutId: string } | null>(null);
 
   useEffect(() => {
-    if (!user) navigate({ to: "/" });
-  }, [user, navigate]);
+    if (hydrated && !user) navigate({ to: "/" });
+  }, [hydrated, user, navigate]);
 
   const block = state.blocks.find((b) => b.id === blockId);
   const trainee = state.users.find((u) => u.id === block?.traineeId);

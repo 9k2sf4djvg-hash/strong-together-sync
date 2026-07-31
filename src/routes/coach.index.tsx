@@ -31,7 +31,7 @@ export const Route = createFileRoute("/coach/")({
 });
 
 function CoachHome() {
-  const { state, setState, user } = useStore();
+  const { state, setState, user, hydrated } = useStore();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -40,9 +40,10 @@ function CoachHome() {
   const [traineeId, setTraineeId] = useState("");
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) navigate({ to: "/" });
     else if (user.role !== "coach") navigate({ to: "/trainee" });
-  }, [user, navigate]);
+  }, [hydrated, user, navigate]);
 
   if (!user || user.role !== "coach") return null;
 

@@ -28,15 +28,15 @@ export const Route = createFileRoute("/")({
 });
 
 function LoginPage() {
-  const { login, user } = useStore();
+  const { login, user, hydrated } = useStore();
   const navigate = useNavigate();
   const [email, setEmail] = useState("coach@example.com");
   const [password, setPassword] = useState("demo1234");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (user) navigate({ to: user.role === "coach" ? "/coach" : "/trainee" });
-  }, [user, navigate]);
+    if (hydrated && user) navigate({ to: user.role === "coach" ? "/coach" : "/trainee" });
+  }, [hydrated, user, navigate]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
