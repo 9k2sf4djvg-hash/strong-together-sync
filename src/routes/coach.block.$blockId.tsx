@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { SetVideoPlayer } from "@/components/SetVideo";
+import type { WorkoutSet } from "@/lib/types";
 import {
   Dialog,
   DialogContent,
@@ -83,7 +86,10 @@ function BlockPage() {
           sets: e.sets.map((s) => ({
             ...s,
             id: uid(),
+            actualReps: null,
+            actualWeight: null,
             actualRpe: null,
+            videoId: null,
             note: "",
             skipped: false,
             skipReason: "",
