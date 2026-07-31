@@ -181,7 +181,7 @@ function PerformWorkout() {
                   >
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-semibold">
-                        סט {i + 1}: {s.reps} חזרות, {s.weight} ק"ג, RPE מטרה: {s.rpe}
+                        סט {i + 1}: {s.reps == null ? "חזרות חופשי" : `${s.reps} חזרות`}, {s.weight} ק"ג, RPE מטרה: {s.rpe}
                       </p>
                       {s.actualRpe != null && !s.skipped && <span className="text-success">✓</span>}
                     </div>
