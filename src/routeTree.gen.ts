@@ -10,8 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CoachRouteImport } from './routes/coach'
-import { Route as TraineeRouteImport } from './routes/trainee'
+import { Route as CoachIndexRouteImport } from './routes/coach.index'
+import { Route as TraineeIndexRouteImport } from './routes/trainee.index'
 import { Route as CoachBlockBlockIdRouteImport } from './routes/coach.block.$blockId'
 import { Route as TraineeWorkoutWorkoutIdRouteImport } from './routes/trainee.workout.$workoutId'
 
@@ -20,46 +20,46 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CoachRoute = CoachRouteImport.update({
-  id: '/coach',
-  path: '/coach',
+const CoachIndexRoute = CoachIndexRouteImport.update({
+  id: '/coach/',
+  path: '/coach/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TraineeRoute = TraineeRouteImport.update({
-  id: '/trainee',
-  path: '/trainee',
+const TraineeIndexRoute = TraineeIndexRouteImport.update({
+  id: '/trainee/',
+  path: '/trainee/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CoachBlockBlockIdRoute = CoachBlockBlockIdRouteImport.update({
-  id: '/block/$blockId',
-  path: '/block/$blockId',
-  getParentRoute: () => CoachRoute,
+  id: '/coach/block/$blockId',
+  path: '/coach/block/$blockId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const TraineeWorkoutWorkoutIdRoute = TraineeWorkoutWorkoutIdRouteImport.update({
-  id: '/workout/$workoutId',
-  path: '/workout/$workoutId',
-  getParentRoute: () => TraineeRoute,
+  id: '/trainee/workout/$workoutId',
+  path: '/trainee/workout/$workoutId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/coach': typeof CoachRouteWithChildren
-  '/trainee': typeof TraineeRouteWithChildren
+  '/coach/': typeof CoachIndexRoute
+  '/trainee/': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
   '/trainee/workout/$workoutId': typeof TraineeWorkoutWorkoutIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/coach': typeof CoachRouteWithChildren
-  '/trainee': typeof TraineeRouteWithChildren
+  '/coach': typeof CoachIndexRoute
+  '/trainee': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
   '/trainee/workout/$workoutId': typeof TraineeWorkoutWorkoutIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/coach': typeof CoachRouteWithChildren
-  '/trainee': typeof TraineeRouteWithChildren
+  '/coach/': typeof CoachIndexRoute
+  '/trainee/': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
   '/trainee/workout/$workoutId': typeof TraineeWorkoutWorkoutIdRoute
 }
@@ -67,8 +67,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/coach'
-    | '/trainee'
+    | '/coach/'
+    | '/trainee/'
     | '/coach/block/$blockId'
     | '/trainee/workout/$workoutId'
   fileRoutesByTo: FileRoutesByTo
@@ -81,16 +81,18 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/coach'
-    | '/trainee'
+    | '/coach/'
+    | '/trainee/'
     | '/coach/block/$blockId'
     | '/trainee/workout/$workoutId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CoachRoute: typeof CoachRouteWithChildren
-  TraineeRoute: typeof TraineeRouteWithChildren
+  CoachIndexRoute: typeof CoachIndexRoute
+  TraineeIndexRoute: typeof TraineeIndexRoute
+  CoachBlockBlockIdRoute: typeof CoachBlockBlockIdRoute
+  TraineeWorkoutWorkoutIdRoute: typeof TraineeWorkoutWorkoutIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -102,62 +104,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/coach': {
-      id: '/coach'
+    '/coach/': {
+      id: '/coach/'
       path: '/coach'
-      fullPath: '/coach'
-      preLoaderRoute: typeof CoachRouteImport
+      fullPath: '/coach/'
+      preLoaderRoute: typeof CoachIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/trainee': {
-      id: '/trainee'
+    '/trainee/': {
+      id: '/trainee/'
       path: '/trainee'
-      fullPath: '/trainee'
-      preLoaderRoute: typeof TraineeRouteImport
+      fullPath: '/trainee/'
+      preLoaderRoute: typeof TraineeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/coach/block/$blockId': {
       id: '/coach/block/$blockId'
-      path: '/block/$blockId'
+      path: '/coach/block/$blockId'
       fullPath: '/coach/block/$blockId'
       preLoaderRoute: typeof CoachBlockBlockIdRouteImport
-      parentRoute: typeof CoachRoute
+      parentRoute: typeof rootRouteImport
     }
     '/trainee/workout/$workoutId': {
       id: '/trainee/workout/$workoutId'
-      path: '/workout/$workoutId'
+      path: '/trainee/workout/$workoutId'
       fullPath: '/trainee/workout/$workoutId'
       preLoaderRoute: typeof TraineeWorkoutWorkoutIdRouteImport
-      parentRoute: typeof TraineeRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface CoachRouteChildren {
-  CoachBlockBlockIdRoute: typeof CoachBlockBlockIdRoute
-}
-
-const CoachRouteChildren: CoachRouteChildren = {
-  CoachBlockBlockIdRoute: CoachBlockBlockIdRoute,
-}
-
-const CoachRouteWithChildren = CoachRoute._addFileChildren(CoachRouteChildren)
-
-interface TraineeRouteChildren {
-  TraineeWorkoutWorkoutIdRoute: typeof TraineeWorkoutWorkoutIdRoute
-}
-
-const TraineeRouteChildren: TraineeRouteChildren = {
-  TraineeWorkoutWorkoutIdRoute: TraineeWorkoutWorkoutIdRoute,
-}
-
-const TraineeRouteWithChildren =
-  TraineeRoute._addFileChildren(TraineeRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CoachRoute: CoachRouteWithChildren,
-  TraineeRoute: TraineeRouteWithChildren,
+  CoachIndexRoute: CoachIndexRoute,
+  TraineeIndexRoute: TraineeIndexRoute,
+  CoachBlockBlockIdRoute: CoachBlockBlockIdRoute,
+  TraineeWorkoutWorkoutIdRoute: TraineeWorkoutWorkoutIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
