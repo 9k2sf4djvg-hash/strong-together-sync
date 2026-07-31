@@ -318,8 +318,9 @@ function WorkoutEditor({
                         </Label>
                         <Input
                           type="number"
+                          placeholder={field === "reps" ? "חופשי" : undefined}
                           className={s.needsUpdate ? "border-destructive text-destructive" : ""}
-                          value={s[field]}
+                          value={s[field] ?? ""}
                           onChange={(e) =>
                             update((w) => ({
                               ...w,
@@ -329,7 +330,16 @@ function WorkoutEditor({
                                       ...x,
                                       sets: x.sets.map((y) =>
                                         y.id === s.id
-                                          ? { ...y, [field]: Number(e.target.value), needsUpdate: false }
+                                          ? {
+                                              ...y,
+                                              [field]:
+                                                e.target.value === ""
+                                                  ? field === "reps"
+                                                    ? null
+                                                    : 0
+                                                  : Number(e.target.value),
+                                              needsUpdate: false,
+                                            }
                                           : y,
                                       ),
                                     }

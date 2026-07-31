@@ -9,7 +9,7 @@ export interface User {
 
 export interface WorkoutSet {
   id: string;
-  reps: number;
+  reps: number | null;
   weight: number;
   rpe: number;
   actualRpe?: number | null;
