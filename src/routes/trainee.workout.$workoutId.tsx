@@ -187,29 +187,44 @@ function PerformWorkout() {
                     className={`rounded-xl border border-border p-3 ${s.skipped ? "opacity-50 line-through" : ""}`}
                   >
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold">
-                        סט {i + 1}: {s.reps == null ? "חזרות חופשי" : `${s.reps} חזרות`}, {s.weight} ק"ג, RPE מטרה: {s.rpe}
-                      </p>
-                      {s.actualRpe != null && !s.skipped && <span className="text-success">✓</span>}
+                      <p className="text-sm font-semibold">סט {i + 1}</p>
+                      {setDone(s) && !s.skipped && <span className="text-success">✓</span>}
                     </div>
                     {!s.skipped && (
-                      <div className="grid gap-2 sm:grid-cols-[120px_1fr_auto] sm:items-end">
-                        <div className="space-y-1">
-                          <Label className="text-xs">RPE בפועל</Label>
-                          <Input
-                            type="number"
-                            min={1}
-                            max={10}
-                            disabled={!editable}
-                            className={s.actualRpe == null ? "border-destructive" : "border-accent text-accent"}
-                            value={s.actualRpe ?? ""}
-                            onChange={(e) =>
-                              setSetField(ex.id, s.id, {
-                                actualRpe: e.target.value === "" ? null : Number(e.target.value),
-                              })
-                            }
-                          />
-                        </div>
+                      <div className="space-y-3">
+                        {(
+                          [
+                            { key: "reps" as const, label: "חזרות", enabled: s.hasReps, field: "actualReps" as const, value: s.actualReps },
+                            { key: "weight" as const, label: "משקל", enabled: s.hasWeight, field: "actualWeight" as const, value: s.actualWeight },
+                            { key: "rpe" as const, label: "RPE", enabled: s.hasRpe, field: "actualRpe" as const, value: s.actualRpe },
+                          ]
+                        ).map((f) => (
+                          <div key={f.key} className="grid gap-2 sm:grid-cols-[1fr_1fr] sm:items-end">
+                            <p className="text-sm">
+                              {f.label} מטרה:{" "}
+                              <span className={`font-mono ${f.enabled ? "" : "text-muted-foreground"}`}>
+                                {targetText(s, f.key)}
+                              </span>
+                            </p>
+                            {f.enabled && (
+                              <div className="space-y-1">
+                                <Label className="text-xs">{f.label} בפועל</Label>
+                                <Input
+                                  type="number"
+                                  inputMode="decimal"
+                                  disabled={!editable}
+                                  className={`font-mono ${f.value == null ? "border-destructive" : "border-accent text-accent"}`}
+                                  value={f.value ?? ""}
+                                  onChange={(e) =>
+                                    setSetField(ex.id, s.id, {
+                                      [f.field]: e.target.value === "" ? null : Number(e.target.value),
+                                    })
+                                  }
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
                         <div className="space-y-1">
                           <Label className="text-xs">הערות</Label>
                           <Input
@@ -217,6 +232,14 @@ function PerformWorkout() {
                             placeholder="הערה אישית"
                             value={s.note ?? ""}
                             onChange={(e) => setSetField(ex.id, s.id, { note: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">📹 סרטון (אופציונלי)</Label>
+                          <SetVideoField
+                            videoId={s.videoId}
+                            disabled={!editable}
+                            onChange={(videoId) => setSetField(ex.id, s.id, { videoId })}
                           />
                         </div>
                         {editable && (
