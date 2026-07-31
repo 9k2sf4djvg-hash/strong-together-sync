@@ -5,6 +5,8 @@ import { ArrowRight } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { Workout } from "@/lib/types";
 import { AppHeader } from "@/components/AppHeader";
+import { SetVideoField } from "@/components/SetVideo";
+import { targetText } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,18 +114,23 @@ function PerformWorkout() {
     toast.success("סומן כדילוג");
   };
 
+  const setDone = (s: (typeof workout.exercises)[number]["sets"][number]) =>
+    s.skipped ||
+    ((!s.hasReps || s.actualReps != null) &&
+      (!s.hasWeight || s.actualWeight != null) &&
+      (!s.hasRpe || s.actualRpe != null));
   const allSetsHandled = workout.exercises.every((e) =>
-    e.skipped ? true : e.sets.every((s) => s.skipped || s.actualRpe != null),
+    e.skipped ? true : e.sets.every((s) => setDone(s)),
   );
   const totalSets = workout.exercises.reduce((n, e) => n + e.sets.length, 0);
   const doneSets = workout.exercises.reduce(
-    (n, e) => n + e.sets.filter((s) => s.actualRpe != null).length,
+    (n, e) => n + e.sets.filter((s) => !s.skipped && setDone(s)).length,
     0,
   );
 
   const finish = () => {
     if (!allSetsHandled) {
-      toast.error("יש לעדכן RPE בפועל או לדלג בכל הסטים");
+      toast.error("יש למלא את כל הערכים בפועל או לדלג בכל הסטים");
       return;
     }
     patchWorkout((w) => ({ ...w, completedAt: Date.now() }));
