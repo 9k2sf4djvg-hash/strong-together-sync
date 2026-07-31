@@ -238,6 +238,99 @@ function BlockPage() {
   );
 }
 
+const FIELDS = [
+  { key: "reps", label: "חזרות", has: "hasReps", min: "repsMin", max: "repsMax" },
+  { key: "weight", label: 'משקל (ק"ג)', has: "hasWeight", min: "weightMin", max: "weightMax" },
+  { key: "rpe", label: "RPE (1-10)", has: "hasRpe", min: "rpeMin", max: "rpeMax" },
+] as const;
+
+function SetEditorRow({
+  set,
+  index,
+  onPatch,
+  onDuplicate,
+  onDelete,
+}: {
+  set: WorkoutSet;
+  index: number;
+  onPatch: (patch: Partial<WorkoutSet>) => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-border p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold">סט {index + 1}</p>
+        <div className="flex gap-1">
+          <Button size="sm" variant="ghost" onClick={onDuplicate} aria-label="שכפל סט">
+            <Copy className="size-4" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onDelete} aria-label="מחק סט">
+            <Trash2 className="size-4 text-destructive" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {FIELDS.map((f) => {
+          const enabled = set[f.has];
+          return (
+            <div key={f.key} className="space-y-1">
+              <label className="flex items-center gap-2 text-xs">
+                <Checkbox
+                  checked={enabled}
+                  onCheckedChange={(v) => onPatch({ [f.has]: v === true } as Partial<WorkoutSet>)}
+                />
+                <span>{f.label}</span>
+                {!enabled && <span className="text-muted-foreground">(לא רלוונטי)</span>}
+              </label>
+              {enabled ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {([f.min, f.max] as const).map((k, idx) => (
+                    <div key={k} className="space-y-1">
+                      <Label className="text-[11px] text-muted-foreground">
+                        {idx === 0 ? "מינימום" : "מקסימום"}
+                      </Label>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        className={`font-mono ${set.needsUpdate ? "border-destructive text-destructive" : ""}`}
+                        value={set[k] ?? ""}
+                        onChange={(e) =>
+                          onPatch({
+                            [k]: e.target.value === "" ? null : Number(e.target.value),
+                            needsUpdate: false,
+                          } as Partial<WorkoutSet>)
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="font-mono text-muted-foreground">————</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {(set.skipped || set.actualReps != null || set.actualWeight != null || set.actualRpe != null || set.note || set.videoId) && (
+        <div className="mt-3 rounded-lg bg-muted/50 p-2 text-xs">
+          {set.skipped ? (
+            <p className="text-destructive">המתאמן דילג: {set.skipReason}</p>
+          ) : (
+            <p className="font-mono text-warning">
+              בפועל — חזרות: {set.actualReps ?? "—"} · משקל: {set.actualWeight ?? "—"} · RPE: {set.actualRpe ?? "—"}
+            </p>
+          )}
+          {set.note && <p className="text-muted-foreground">"{set.note}"</p>}
+          <SetVideoPlayer videoId={set.videoId} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function WorkoutEditor({
   workout,
   onClose,
