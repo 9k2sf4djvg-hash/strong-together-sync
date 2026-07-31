@@ -10,33 +10,89 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CoachIndexRouteImport } from './routes/coach.index'
+import { Route as TraineeIndexRouteImport } from './routes/trainee.index'
+import { Route as CoachBlockBlockIdRouteImport } from './routes/coach.block.$blockId'
+import { Route as TraineeWorkoutWorkoutIdRouteImport } from './routes/trainee.workout.$workoutId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CoachIndexRoute = CoachIndexRouteImport.update({
+  id: '/coach/',
+  path: '/coach/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TraineeIndexRoute = TraineeIndexRouteImport.update({
+  id: '/trainee/',
+  path: '/trainee/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoachBlockBlockIdRoute = CoachBlockBlockIdRouteImport.update({
+  id: '/coach/block/$blockId',
+  path: '/coach/block/$blockId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TraineeWorkoutWorkoutIdRoute = TraineeWorkoutWorkoutIdRouteImport.update({
+  id: '/trainee/workout/$workoutId',
+  path: '/trainee/workout/$workoutId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/coach/': typeof CoachIndexRoute
+  '/trainee/': typeof TraineeIndexRoute
+  '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
+  '/trainee/workout/$workoutId': typeof TraineeWorkoutWorkoutIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/coach': typeof CoachIndexRoute
+  '/trainee': typeof TraineeIndexRoute
+  '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
+  '/trainee/workout/$workoutId': typeof TraineeWorkoutWorkoutIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/coach/': typeof CoachIndexRoute
+  '/trainee/': typeof TraineeIndexRoute
+  '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
+  '/trainee/workout/$workoutId': typeof TraineeWorkoutWorkoutIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/coach/'
+    | '/trainee/'
+    | '/coach/block/$blockId'
+    | '/trainee/workout/$workoutId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/coach'
+    | '/trainee'
+    | '/coach/block/$blockId'
+    | '/trainee/workout/$workoutId'
+  id:
+    | '__root__'
+    | '/'
+    | '/coach/'
+    | '/trainee/'
+    | '/coach/block/$blockId'
+    | '/trainee/workout/$workoutId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CoachIndexRoute: typeof CoachIndexRoute
+  TraineeIndexRoute: typeof TraineeIndexRoute
+  CoachBlockBlockIdRoute: typeof CoachBlockBlockIdRoute
+  TraineeWorkoutWorkoutIdRoute: typeof TraineeWorkoutWorkoutIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +104,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coach/': {
+      id: '/coach/'
+      path: '/coach'
+      fullPath: '/coach/'
+      preLoaderRoute: typeof CoachIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trainee/': {
+      id: '/trainee/'
+      path: '/trainee'
+      fullPath: '/trainee/'
+      preLoaderRoute: typeof TraineeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coach/block/$blockId': {
+      id: '/coach/block/$blockId'
+      path: '/coach/block/$blockId'
+      fullPath: '/coach/block/$blockId'
+      preLoaderRoute: typeof CoachBlockBlockIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trainee/workout/$workoutId': {
+      id: '/trainee/workout/$workoutId'
+      path: '/trainee/workout/$workoutId'
+      fullPath: '/trainee/workout/$workoutId'
+      preLoaderRoute: typeof TraineeWorkoutWorkoutIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CoachIndexRoute: CoachIndexRoute,
+  TraineeIndexRoute: TraineeIndexRoute,
+  CoachBlockBlockIdRoute: CoachBlockBlockIdRoute,
+  TraineeWorkoutWorkoutIdRoute: TraineeWorkoutWorkoutIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
