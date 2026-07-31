@@ -50,6 +50,8 @@ function BlockPage() {
     return block.weeks.find((w) => w.weekNumber === editing.week)?.workouts.find((w) => w.id === editing.workoutId) ?? null;
   }, [block, editing]);
 
+  if (!hydrated) return <div className="min-h-screen bg-background" />;
+
   if (!block) {
     return (
       <div className="min-h-screen bg-background p-6 text-foreground">

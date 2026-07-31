@@ -49,6 +49,8 @@ function PerformWorkout() {
   const week = block?.weeks.find((w) => w.workouts.some((x) => x.id === workoutId));
   const workout = week?.workouts.find((x) => x.id === workoutId);
 
+  if (!hydrated) return <div className="min-h-screen bg-background" />;
+
   if (!block || !week || !workout) {
     return (
       <div className="min-h-screen bg-background p-6 text-foreground">
