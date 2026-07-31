@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/trainee")({
+export const Route = createFileRoute("/trainee/")({
   head: () => ({
     meta: [
       { title: "השבוע שלי — Strong Together" },

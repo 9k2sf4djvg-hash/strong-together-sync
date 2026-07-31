@@ -18,7 +18,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Block, Week } from "@/lib/types";
 
-export const Route = createFileRoute("/coach")({
+export const Route = createFileRoute("/coach/")({
   head: () => ({
     meta: [
       { title: "ממשק מאמן — Strong Together" },
