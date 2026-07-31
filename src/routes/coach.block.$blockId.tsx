@@ -313,58 +313,55 @@ function WorkoutEditor({
 
               <div className="space-y-2">
                 {ex.sets.map((s, i) => (
-                  <div key={s.id} className="grid grid-cols-3 gap-2 sm:grid-cols-[auto_1fr_1fr_1fr_auto] sm:items-end">
-                    <span className="col-span-3 text-xs text-muted-foreground sm:col-span-1 sm:pb-2">
-                      סט {i + 1}
-                    </span>
-                    {(["reps", "weight", "rpe"] as const).map((field) => (
-                      <div key={field} className="space-y-1">
-                        <Label className="text-xs">
-                          {field === "reps" ? "חזרות" : field === "weight" ? 'ק"ג' : "RPE"}
-                        </Label>
-                        <Input
-                          type="number"
-                          placeholder={field === "reps" ? "חופשי" : undefined}
-                          className={s.needsUpdate ? "border-destructive text-destructive" : ""}
-                          value={s[field] ?? ""}
-                          onChange={(e) =>
-                            update((w) => ({
-                              ...w,
-                              exercises: w.exercises.map((x) =>
-                                x.id === ex.id
-                                  ? {
-                                      ...x,
-                                      sets: x.sets.map((y) =>
-                                        y.id === s.id
-                                          ? {
-                                              ...y,
-                                              [field]:
-                                                e.target.value === ""
-                                                  ? field === "reps"
-                                                    ? null
-                                                    : 0
-                                                  : Number(e.target.value),
-                                              needsUpdate: false,
-                                            }
-                                          : y,
-                                      ),
-                                    }
-                                  : x,
-                              ),
-                            }))
-                          }
-                        />
-                      </div>
-                    ))}
-                    <div className="col-span-3 text-xs sm:col-span-1">
-                      {s.skipped ? (
-                        <span className="text-destructive">דילג: {s.skipReason}</span>
-                      ) : s.actualRpe != null ? (
-                        <span className="text-warning">RPE בפועל: {s.actualRpe}</span>
-                      ) : null}
-                      {s.note && <span className="block text-muted-foreground">"{s.note}"</span>}
-                    </div>
-                  </div>
+                  <SetEditorRow
+                    key={s.id}
+                    set={s}
+                    index={i}
+                    onPatch={(patch) =>
+                      update((w) => ({
+                        ...w,
+                        exercises: w.exercises.map((x) =>
+                          x.id === ex.id
+                            ? { ...x, sets: x.sets.map((y) => (y.id === s.id ? { ...y, ...patch } : y)) }
+                            : x,
+                        ),
+                      }))
+                    }
+                    onDuplicate={() =>
+                      update((w) => ({
+                        ...w,
+                        exercises: w.exercises.map((x) =>
+                          x.id === ex.id
+                            ? {
+                                ...x,
+                                sets: [
+                                  ...x.sets,
+                                  {
+                                    ...s,
+                                    id: uid(),
+                                    actualReps: null,
+                                    actualWeight: null,
+                                    actualRpe: null,
+                                    videoId: null,
+                                    note: "",
+                                    skipped: false,
+                                    skipReason: "",
+                                  },
+                                ],
+                              }
+                            : x,
+                        ),
+                      }))
+                    }
+                    onDelete={() =>
+                      update((w) => ({
+                        ...w,
+                        exercises: w.exercises.map((x) =>
+                          x.id === ex.id ? { ...x, sets: x.sets.filter((y) => y.id !== s.id) } : x,
+                        ),
+                      }))
+                    }
+                  />
                 ))}
                 <Button
                   variant="outline"
