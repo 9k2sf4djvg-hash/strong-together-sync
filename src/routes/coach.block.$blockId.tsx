@@ -392,26 +392,27 @@ function WorkoutEditor({
           ))}
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Select value={newExercise} onValueChange={setNewExercise}>
-              <SelectTrigger className="sm:flex-1">
-                <SelectValue placeholder="בחר תרגיל מהרשימה" />
-              </SelectTrigger>
-              <SelectContent>
-                {EXERCISE_LIBRARY.map((e) => (
-                  <SelectItem key={e} value={e}>
-                    {e}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              className="sm:flex-1"
+              placeholder="שם התרגיל"
+              value={newExercise}
+              onChange={(e) => setNewExercise(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newExercise.trim()) {
+                  e.preventDefault();
+                  update((w) => ({ ...w, exercises: [...w.exercises, emptyExercise(newExercise.trim())] }));
+                  setNewExercise("");
+                }
+              }}
+            />
             <Button
               variant="secondary"
               onClick={() => {
-                if (!newExercise) {
-                  toast.error("בחר תרגיל");
+                if (!newExercise.trim()) {
+                  toast.error("הזן שם תרגיל");
                   return;
                 }
-                update((w) => ({ ...w, exercises: [...w.exercises, emptyExercise(newExercise)] }));
+                update((w) => ({ ...w, exercises: [...w.exercises, emptyExercise(newExercise.trim())] }));
                 setNewExercise("");
               }}
             >
