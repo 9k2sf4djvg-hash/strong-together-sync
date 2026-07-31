@@ -14,8 +14,70 @@ const users: User[] = [
   { id: 3, name: "נועה ברק", email: "noa@example.com", role: "trainee" },
 ];
 
-function mkSet(reps: number, weight: number, rpe: number): WorkoutSet {
-  return { id: uid(), reps, weight, rpe, actualRpe: null };
+function mkSet(
+  repsMin: number | null,
+  repsMax: number | null,
+  weightMin: number | null,
+  weightMax: number | null,
+  rpeMin: number | null,
+  rpeMax: number | null,
+): WorkoutSet {
+  return {
+    id: uid(),
+    hasReps: repsMin != null || repsMax != null,
+    repsMin,
+    repsMax,
+    hasWeight: weightMin != null || weightMax != null,
+    weightMin,
+    weightMax,
+    hasRpe: rpeMin != null || rpeMax != null,
+    rpeMin,
+    rpeMax,
+    actualReps: null,
+    actualWeight: null,
+    actualRpe: null,
+    videoId: null,
+  };
+}
+
+type LegacySet = WorkoutSet & { reps?: number | null; weight?: number | null; rpe?: number | null };
+
+/** Migrates sets saved before ranges/toggles existed. */
+function migrateState(s: AppState): AppState {
+  return {
+    ...s,
+    blocks: (s.blocks ?? []).map((b) => ({
+      ...b,
+      weeks: b.weeks.map((w) => ({
+        ...w,
+        workouts: w.workouts.map((wo) => ({
+          ...wo,
+          exercises: wo.exercises.map((e) => ({
+            ...e,
+            sets: e.sets.map((raw) => {
+              const set = raw as LegacySet;
+              if ("hasReps" in set && set.hasReps !== undefined) return set as WorkoutSet;
+              const { reps, weight, rpe, ...rest } = set;
+              return {
+                ...rest,
+                hasReps: reps != null,
+                repsMin: reps ?? null,
+                repsMax: reps ?? null,
+                hasWeight: weight != null,
+                weightMin: weight ?? null,
+                weightMax: weight ?? null,
+                hasRpe: rpe != null,
+                rpeMin: rpe ?? null,
+                rpeMax: rpe ?? null,
+                actualReps: null,
+                actualWeight: null,
+              } as WorkoutSet;
+            }),
+          })),
+        })),
+      })),
+    })),
+  };
 }
 
 function seedBlock(): Block {
@@ -32,13 +94,13 @@ function seedBlock(): Block {
             id: uid(),
             name: "Squat",
             coachNotes: "שמור על הגב ישר",
-            sets: [mkSet(5, 100, 8), mkSet(5, 100, 8), mkSet(5, 100, 9)],
+            sets: [mkSet(5, 8, 90, 100, 7, 9), mkSet(5, 8, 90, 100, 7, 9), mkSet(3, 5, 100, 110, 8, 9)],
           },
           {
             id: uid(),
             name: "Leg Press",
             coachNotes: "",
-            sets: [mkSet(10, 150, 7), mkSet(10, 150, 8)],
+            sets: [mkSet(8, 12, 140, 150, 7, 8), mkSet(8, 12, 140, 150, 7, 9)],
           },
         ],
       },
@@ -50,9 +112,14 @@ function seedBlock(): Block {
             id: uid(),
             name: "Bench Press",
             coachNotes: "טמפו איטי בירידה",
-            sets: [mkSet(6, 70, 8), mkSet(6, 70, 8)],
+            sets: [mkSet(6, 8, 65, 70, 7, 8), mkSet(6, 8, 65, 70, 8, 9)],
           },
-          { id: uid(), name: "Barbell Row", coachNotes: "", sets: [mkSet(8, 60, 7), mkSet(8, 60, 8)] },
+          {
+            id: uid(),
+            name: "Barbell Row",
+            coachNotes: "",
+            sets: [mkSet(8, 10, 55, 60, 7, 8), mkSet(8, 10, 55, 60, 7, 9)],
+          },
         ],
       },
     ] as Workout[],
@@ -113,7 +180,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const s = localStorage.getItem(STATE_KEY);
-      if (s) setRaw(JSON.parse(s) as AppState);
+      if (s) setRaw(migrateState(JSON.parse(s) as AppState));
       const sess = localStorage.getItem(SESSION_KEY);
       if (sess) setUser(JSON.parse(sess) as User);
       const t = localStorage.getItem(THEME_KEY) as "dark" | "light" | null;
@@ -195,9 +262,9 @@ export function useStore() {
 }
 
 export function emptyExercise(name: string): Exercise {
-  return { id: uid(), name, coachNotes: "", sets: [mkSet(5, 50, 8)] };
+  return { id: uid(), name, coachNotes: "", sets: [mkSet(8, 12, 40, 50, 7, 8)] };
 }
 
 export function newSet(): WorkoutSet {
-  return mkSet(5, 50, 8);
+  return mkSet(8, 12, 40, 50, 7, 8);
 }
