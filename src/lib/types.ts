@@ -9,10 +9,20 @@ export interface User {
 
 export interface WorkoutSet {
   id: string;
-  reps: number | null;
-  weight: number;
-  rpe: number;
+  hasReps: boolean;
+  repsMin: number | null;
+  repsMax: number | null;
+  hasWeight: boolean;
+  weightMin: number | null;
+  weightMax: number | null;
+  hasRpe: boolean;
+  rpeMin: number | null;
+  rpeMax: number | null;
+  actualReps?: number | null;
+  actualWeight?: number | null;
   actualRpe?: number | null;
+  videoId?: string | null;
+  videoName?: string | null;
   note?: string;
   skipped?: boolean;
   skipReason?: string;
