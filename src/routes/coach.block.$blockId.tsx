@@ -139,7 +139,7 @@ function BlockPage() {
       currentWeek: week.weekNumber,
       weeks: b.weeks.map((w) => (w.weekNumber === week.weekNumber ? { ...w, published: true } : w)),
     }));
-    notify("trainee", `שבוע ${week.weekNumber} בבלוק "${block.name}" נשלח אליך`);
+    notify("trainee", `שבוע ${week.weekNumber} בבלוק "${block.name}" נשלח אליך`, block.traineeId, block.coachId);
     toast.success(`שבוע ${week.weekNumber} נשלח ל${trainee?.name ?? "מתאמן"}`);
   };
 
@@ -148,7 +148,7 @@ function BlockPage() {
       ...b,
       weeks: b.weeks.map((w) => (w.weekNumber === week.weekNumber ? { ...w, reviewed: true } : w)),
     }));
-    notify("trainee", `המאמן סקר את שבוע ${week.weekNumber}`);
+    notify("trainee", `המאמן סקר את שבוע ${week.weekNumber}`, block.traineeId, block.coachId);
     toast.success("סומן כנסקר");
   };
 
@@ -189,7 +189,7 @@ function BlockPage() {
   const finishBlock = () => {
     if (!window.confirm(`לסיים את הבלוק "${block.name}"?`)) return;
     updateBlock(block.id, (b) => ({ ...b, completedAt: Date.now() }));
-    notify("trainee", `הבלוק "${block.name}" הסתיים — כל הכבוד!`);
+    notify("trainee", `הבלוק "${block.name}" הסתיים — כל הכבוד!`, block.traineeId, block.coachId);
     toast.success("הבלוק הסתיים");
   };
 

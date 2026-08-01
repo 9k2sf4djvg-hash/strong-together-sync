@@ -134,10 +134,20 @@ function PerformWorkout() {
       return;
     }
     patchWorkout((w) => ({ ...w, completedAt: Date.now() }));
-    notify("coach", `${user?.name} סיים את האימון "${workout.title}" (שבוע ${week.weekNumber})`);
+    notify(
+      "coach",
+      `${user?.name} סיים את האימון "${workout.title}" (שבוע ${week.weekNumber})`,
+      block.coachId,
+      user?.id,
+    );
     const others = week.workouts.filter((w) => w.id !== workout.id);
     if (others.every((w) => w.completedAt)) {
-      notify("coach", `${user?.name} סיים את שבוע ${week.weekNumber} בבלוק "${block.name}"`);
+      notify(
+        "coach",
+        `${user?.name} סיים את שבוע ${week.weekNumber} בבלוק "${block.name}"`,
+        block.coachId,
+        user?.id,
+      );
     }
     toast.success("אימון הושלם בהצלחה!");
   };
