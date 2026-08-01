@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import type { AppState, Block, Exercise, Role, User, Workout, WorkoutSet } from "./types";
+import type { AppState, Block, ChatMessage, Exercise, Role, User, Workout, WorkoutSet } from "./types";
 
 const STATE_KEY = "st_state_v1";
 const SESSION_KEY = "st_session_v1";
@@ -46,6 +46,8 @@ type LegacySet = WorkoutSet & { reps?: number | null; weight?: number | null; rp
 function migrateState(s: AppState): AppState {
   return {
     ...s,
+    notifications: s.notifications ?? [],
+    messages: s.messages ?? [],
     blocks: (s.blocks ?? []).map((b) => ({
       ...b,
       weeks: b.weeks.map((w) => ({
@@ -154,6 +156,7 @@ const initialState = (): AppState => ({
   users,
   blocks: [seedBlock()],
   notifications: [],
+  messages: [],
 });
 
 interface Ctx {
@@ -167,6 +170,8 @@ interface Ctx {
   toggleTheme: () => void;
   updateBlock: (blockId: string, fn: (b: Block) => Block) => void;
   notify: (to: Role, text: string) => void;
+  sendMessage: (traineeId: number, text: string) => void;
+  markThreadRead: (traineeId: number) => void;
 }
 
 const StoreContext = createContext<Ctx | null>(null);
@@ -236,6 +241,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const sendMessage = useCallback(
+    (traineeId: number, text: string) => {
+      if (!user || !text.trim()) return;
+      const msg: ChatMessage = {
+        id: uid(),
+        traineeId,
+        fromRole: user.role,
+        fromUserId: user.id,
+        text: text.trim(),
+        createdAt: Date.now(),
+        readByCoach: user.role === "coach",
+        readByTrainee: user.role === "trainee",
+      };
+      setRaw((s) => ({ ...s, messages: [...(s.messages ?? []), msg] }));
+    },
+    [user],
+  );
+
+  const markThreadRead = useCallback(
+    (traineeId: number) => {
+      if (!user) return;
+      const key = user.role === "coach" ? "readByCoach" : "readByTrainee";
+      setRaw((s) => ({
+        ...s,
+        messages: (s.messages ?? []).map((m) =>
+          m.traineeId === traineeId && !m[key] ? { ...m, [key]: true } : m,
+        ),
+      }));
+    },
+    [user],
+  );
+
   const value = useMemo(
     () => ({
       hydrated,
@@ -248,8 +285,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
       updateBlock,
       notify,
+      sendMessage,
+      markThreadRead,
     }),
-    [hydrated, state, setState, user, login, logout, theme, updateBlock, notify],
+    [hydrated, state, setState, user, login, logout, theme, updateBlock, notify, sendMessage, markThreadRead],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
