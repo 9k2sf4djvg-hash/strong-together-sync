@@ -186,6 +186,25 @@ function BlockPage() {
     navigate({ to: "/coach" });
   };
 
+  const finishBlock = () => {
+    if (!window.confirm(`לסיים את הבלוק "${block.name}"?`)) return;
+    updateBlock(block.id, (b) => ({ ...b, completedAt: Date.now() }));
+    notify("trainee", `הבלוק "${block.name}" הסתיים — כל הכבוד!`);
+    toast.success("הבלוק הסתיים");
+  };
+
+  const reopenBlock = () => {
+    updateBlock(block.id, (b) => ({ ...b, completedAt: null }));
+    toast.success("הבלוק נפתח מחדש");
+  };
+
+  const _unusedDeleteBlock = () => {
+    if (!window.confirm(`למחוק את הבלוק "${block.name}"? הפעולה אינה הפיכה.`)) return;
+    setState((s) => ({ ...s, blocks: s.blocks.filter((b) => b.id !== block.id) }));
+    toast.success("הבלוק נמחק");
+    navigate({ to: "/coach" });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <AppHeader subtitle={`בלוק: ${block.name} · ${trainee?.name ?? ""}`} />
