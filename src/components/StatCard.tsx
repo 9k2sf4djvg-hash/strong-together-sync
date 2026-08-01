@@ -1,0 +1,93 @@
+import type { LucideIcon } from "lucide-react";
+import { TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export function StatCard({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  trend = "flat",
+  tone = "primary",
+  index = 0,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string | number;
+  hint?: string;
+  trend?: "up" | "down" | "flat";
+  tone?: "primary" | "violet" | "accent" | "success";
+  index?: number;
+}) {
+  const toneClass = {
+    primary: "text-primary bg-primary/12",
+    violet: "text-violet bg-violet/12",
+    accent: "text-accent bg-accent/12",
+    success: "text-success bg-success/12",
+  }[tone];
+  const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
+
+  return (
+    <div
+      className="glass-card lift animate-fade-up rounded-2xl p-4"
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl", toneClass)}>
+          <Icon className="size-5" />
+        </span>
+        <TrendIcon
+          className={cn(
+            "size-4",
+            trend === "up" ? "text-success" : trend === "down" ? "text-destructive" : "text-muted-foreground",
+          )}
+          aria-hidden="true"
+        />
+      </div>
+      <p className="mt-3 text-2xl font-extrabold tracking-tight">{value}</p>
+      <p className="truncate text-sm text-muted-foreground">{label}</p>
+      {hint ? <p className="mt-1 truncate text-xs text-muted-foreground/80">{hint}</p> : null}
+    </div>
+  );
+}
+
+export function ProgressBar({ value, className }: { value: number; className?: string }) {
+  const pct = Math.max(0, Math.min(100, Math.round(value)));
+  return (
+    <div
+      className={cn("h-2 w-full overflow-hidden rounded-full bg-muted", className)}
+      role="progressbar"
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <div
+        className="gradient-brand h-full rounded-full transition-[width] duration-700 ease-out"
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
+
+export function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  action,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="glass-card animate-fade-up col-span-full rounded-2xl p-8 text-center">
+      <span className="gradient-brand mx-auto grid size-14 place-items-center rounded-2xl text-white">
+        <Icon className="size-7" />
+      </span>
+      <p className="mt-4 text-lg font-bold">{title}</p>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+    </div>
+  );
+}
