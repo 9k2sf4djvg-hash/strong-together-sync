@@ -102,8 +102,6 @@ function BlockPage() {
     toast.success(`שבוע ${copy.weekNumber} שוכפל — עדכן את השדות המסומנים באדום`);
   };
 
-  const publishWeek = (week: Week) => {
-
   const addWeek = () => {
     const next = block.weeks.length + 1;
     updateBlock(block.id, (b) => ({
@@ -129,6 +127,7 @@ function BlockPage() {
     toast.success("השבוע נמחק");
   };
 
+  const publishWeek = (week: Week) => {
     updateBlock(block.id, (b) => ({
       ...b,
       currentWeek: week.weekNumber,
