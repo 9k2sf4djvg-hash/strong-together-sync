@@ -102,6 +102,31 @@ function BlockPage() {
     toast.success(`שבוע ${copy.weekNumber} שוכפל — עדכן את השדות המסומנים באדום`);
   };
 
+  const addWeek = () => {
+    const next = block.weeks.length + 1;
+    updateBlock(block.id, (b) => ({
+      ...b,
+      totalWeeks: Math.max(b.totalWeeks, next),
+      weeks: [...b.weeks, { weekNumber: next, published: false, reviewed: false, workouts: [] }],
+    }));
+    toast.success(`שבוע ${next} נוסף`);
+  };
+
+  const deleteWeek = (week: Week) => {
+    if (!window.confirm(`למחוק את שבוע ${week.weekNumber}? הפעולה אינה הפיכה.`)) return;
+    updateBlock(block.id, (b) => {
+      const weeks = b.weeks
+        .filter((w) => w.weekNumber !== week.weekNumber)
+        .map((w, i) => ({ ...w, weekNumber: i + 1 }));
+      return {
+        ...b,
+        weeks,
+        currentWeek: Math.min(Math.max(b.currentWeek, 1), Math.max(weeks.length, 1)),
+      };
+    });
+    toast.success("השבוע נמחק");
+  };
+
   const publishWeek = (week: Week) => {
     updateBlock(block.id, (b) => ({
       ...b,
@@ -187,6 +212,15 @@ function BlockPage() {
                     <Button size="sm" variant="outline" onClick={() => duplicateWeek(week)}>
                       <Copy className="size-4" /> הכפל שבוע
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => deleteWeek(week)}
+                      aria-label={`מחק שבוע ${week.weekNumber}`}
+                    >
+                      <Trash2 className="size-4" /> מחק שבוע
+                    </Button>
                   </div>
                 </div>
                 {needsUpdate && (
@@ -223,6 +257,9 @@ function BlockPage() {
               </section>
             );
           })}
+          <Button variant="outline" className="w-full" onClick={addWeek}>
+            <Plus className="size-4" /> הוסף שבוע
+          </Button>
         </div>
       </main>
 
