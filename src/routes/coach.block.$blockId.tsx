@@ -19,8 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { WORKOUT_TITLES } from "@/lib/types";
 import type { Week, Workout } from "@/lib/types";
 
 export const Route = createFileRoute("/coach/block/$blockId")({
@@ -378,7 +376,6 @@ function WorkoutEditor({
   onSave: (w: Workout) => void;
 }) {
   const [draft, setDraft] = useState<Workout>(workout);
-  const [custom, setCustom] = useState(!WORKOUT_TITLES.includes(workout.title));
   const [newExercise, setNewExercise] = useState("");
 
   const update = (fn: (w: Workout) => Workout) => setDraft((d) => fn(d));
@@ -393,35 +390,11 @@ function WorkoutEditor({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>כותרת אימון</Label>
-            <Select
-              value={custom ? "custom" : draft.title}
-              onValueChange={(v) => {
-                if (v === "custom") setCustom(true);
-                else {
-                  setCustom(false);
-                  update((w) => ({ ...w, title: v }));
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="בחר כותרת" />
-              </SelectTrigger>
-              <SelectContent>
-                {WORKOUT_TITLES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-                <SelectItem value="custom">כתיבה חופשית</SelectItem>
-              </SelectContent>
-            </Select>
-            {custom && (
-              <Input
-                value={draft.title}
-                placeholder="כותרת חופשית"
-                onChange={(e) => update((w) => ({ ...w, title: e.target.value }))}
-              />
-            )}
+            <Input
+              value={draft.title}
+              placeholder="לדוגמה: רגליים"
+              onChange={(e) => update((w) => ({ ...w, title: e.target.value }))}
+            />
           </div>
 
           {draft.exercises.map((ex, exIdx) => (
