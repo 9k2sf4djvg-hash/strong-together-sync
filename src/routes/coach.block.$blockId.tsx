@@ -198,13 +198,6 @@ function BlockPage() {
     toast.success("הבלוק נפתח מחדש");
   };
 
-  const _unusedDeleteBlock = () => {
-    if (!window.confirm(`למחוק את הבלוק "${block.name}"? הפעולה אינה הפיכה.`)) return;
-    setState((s) => ({ ...s, blocks: s.blocks.filter((b) => b.id !== block.id) }));
-    toast.success("הבלוק נמחק");
-    navigate({ to: "/coach" });
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <AppHeader subtitle={`בלוק: ${block.name} · ${trainee?.name ?? ""}`} />
