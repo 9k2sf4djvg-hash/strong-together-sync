@@ -67,8 +67,8 @@ export interface Block {
 export interface AppNotification {
   id: string;
   to: Role;
-  toUserId?: number;
-  fromUserId?: number;
+  toUserId?: number | undefined;
+  fromUserId?: number | undefined;
   text: string;
   createdAt: number;
   read?: boolean;
