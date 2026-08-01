@@ -555,6 +555,8 @@ function WorkoutEditor({
 
   const update = (fn: (w: Workout) => Workout) => setDraft((d) => fn(d));
 
+  if (workout.completedAt) return <CompletedWorkoutView workout={workout} onClose={onClose} />;
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
