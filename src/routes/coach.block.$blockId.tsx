@@ -104,6 +104,31 @@ function BlockPage() {
 
   const publishWeek = (week: Week) => {
 
+  const addWeek = () => {
+    const next = block.weeks.length + 1;
+    updateBlock(block.id, (b) => ({
+      ...b,
+      totalWeeks: Math.max(b.totalWeeks, next),
+      weeks: [...b.weeks, { weekNumber: next, published: false, reviewed: false, workouts: [] }],
+    }));
+    toast.success(`שבוע ${next} נוסף`);
+  };
+
+  const deleteWeek = (week: Week) => {
+    if (!window.confirm(`למחוק את שבוע ${week.weekNumber}? הפעולה אינה הפיכה.`)) return;
+    updateBlock(block.id, (b) => {
+      const weeks = b.weeks
+        .filter((w) => w.weekNumber !== week.weekNumber)
+        .map((w, i) => ({ ...w, weekNumber: i + 1 }));
+      return {
+        ...b,
+        weeks,
+        currentWeek: Math.min(Math.max(b.currentWeek, 1), Math.max(weeks.length, 1)),
+      };
+    });
+    toast.success("השבוע נמחק");
+  };
+
     updateBlock(block.id, (b) => ({
       ...b,
       currentWeek: week.weekNumber,
