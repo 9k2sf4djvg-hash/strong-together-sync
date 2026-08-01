@@ -148,6 +148,11 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    // App mounted fine — allow a future stale-chunk auto-reload.
+    sessionStorage.removeItem("st_chunk_reloaded");
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
