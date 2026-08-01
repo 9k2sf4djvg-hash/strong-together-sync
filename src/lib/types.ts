@@ -61,7 +61,6 @@ export interface Block {
   workoutsPerWeek: number;
   currentWeek: number;
   weeks: Week[];
-  completedAt?: number | null;
 }
 
 export interface AppNotification {
