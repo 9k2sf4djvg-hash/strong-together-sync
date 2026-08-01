@@ -194,8 +194,8 @@ function PerformWorkout() {
                       <div className="space-y-3">
                         {(
                           [
-                            { key: "reps" as const, label: "חזרות", enabled: s.hasReps, field: "actualReps" as const, value: s.actualReps },
                             { key: "weight" as const, label: "משקל", enabled: s.hasWeight, field: "actualWeight" as const, value: s.actualWeight },
+                            { key: "reps" as const, label: "חזרות", enabled: s.hasReps, field: "actualReps" as const, value: s.actualReps },
                             { key: "rpe" as const, label: "RPE", enabled: s.hasRpe, field: "actualRpe" as const, value: s.actualRpe },
                           ]
                         ).map((f) => (
