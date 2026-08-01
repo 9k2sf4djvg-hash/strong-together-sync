@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { SetVideoPlayer } from "@/components/SetVideo";
 import type { WorkoutSet } from "@/lib/types";
+import { targetText } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
@@ -186,6 +186,18 @@ function BlockPage() {
     navigate({ to: "/coach" });
   };
 
+  const finishBlock = () => {
+    if (!window.confirm(`לסיים את הבלוק "${block.name}"?`)) return;
+    updateBlock(block.id, (b) => ({ ...b, completedAt: Date.now() }));
+    notify("trainee", `הבלוק "${block.name}" הסתיים — כל הכבוד!`);
+    toast.success("הבלוק הסתיים");
+  };
+
+  const reopenBlock = () => {
+    updateBlock(block.id, (b) => ({ ...b, completedAt: null }));
+    toast.success("הבלוק נפתח מחדש");
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <AppHeader subtitle={`בלוק: ${block.name} · ${trainee?.name ?? ""}`} />
@@ -280,12 +292,29 @@ function BlockPage() {
                     <Plus className="size-4" /> הוסף אימון
                   </Button>
                 </div>
+                {block.currentWeek === week.weekNumber && !block.completedAt && (
+                  <Button size="sm" variant="secondary" className="mt-3" onClick={finishBlock}>
+                    <Check className="size-4" /> סיים בלוק
+                  </Button>
+                )}
               </section>
             );
           })}
           <Button variant="outline" className="w-full" onClick={addWeek}>
             <Plus className="size-4" /> הוסף שבוע
           </Button>
+          {block.completedAt ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-success/40 bg-success/10 p-4">
+              <p className="font-semibold text-success">הבלוק הושלם ✓</p>
+              <Button size="sm" variant="outline" onClick={reopenBlock}>
+                פתח מחדש
+              </Button>
+            </div>
+          ) : (
+            <Button variant="secondary" className="w-full" onClick={finishBlock}>
+              <Check className="size-4" /> סיים בלוק
+            </Button>
+          )}
         </div>
       </main>
 
@@ -405,10 +434,18 @@ function BlockSettingsDialog({
 }
 
 const FIELDS = [
-  { key: "reps", label: "חזרות", has: "hasReps", min: "repsMin", max: "repsMax" },
   { key: "weight", label: 'משקל (ק"ג)', has: "hasWeight", min: "weightMin", max: "weightMax" },
+  { key: "reps", label: "חזרות", has: "hasReps", min: "repsMin", max: "repsMax" },
   { key: "rpe", label: "RPE (1-10)", has: "hasRpe", min: "rpeMin", max: "rpeMax" },
 ] as const;
+
+type FieldMode = "range" | "single" | "off";
+
+const MODES: { value: FieldMode; label: string }[] = [
+  { value: "range", label: "טווח" },
+  { value: "single", label: "ערך יחיד" },
+  { value: "off", label: "לא רלוונטי" },
+];
 
 function SetEditorRow({
   set,
@@ -440,17 +477,53 @@ function SetEditorRow({
       <div className="space-y-3">
         {FIELDS.map((f) => {
           const enabled = set[f.has];
+          const min = set[f.min];
+          const max = set[f.max];
+          const mode: FieldMode = !enabled ? "off" : min === max ? "single" : "range";
+          const setMode = (m: FieldMode) => {
+            if (m === "off") {
+              onPatch({ [f.has]: false } as Partial<WorkoutSet>);
+            } else if (m === "single") {
+              const v = min ?? max ?? null;
+              onPatch({ [f.has]: true, [f.min]: v, [f.max]: v, needsUpdate: false } as Partial<WorkoutSet>);
+            } else {
+              const v = min ?? max ?? null;
+              onPatch({ [f.has]: true, [f.min]: v, [f.max]: v == null ? null : v } as Partial<WorkoutSet>);
+            }
+          };
           return (
             <div key={f.key} className="space-y-1">
-              <label className="flex items-center gap-2 text-xs">
-                <Checkbox
-                  checked={enabled}
-                  onCheckedChange={(v) => onPatch({ [f.has]: v === true } as Partial<WorkoutSet>)}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-medium">{f.label}</span>
+                <div className="flex overflow-hidden rounded-lg border border-border">
+                  {MODES.map((m) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => setMode(m.value)}
+                      className={`px-2 py-1 text-[11px] transition-colors ${
+                        mode === m.value
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {mode === "single" ? (
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  className={`font-mono ${set.needsUpdate ? "border-destructive text-destructive" : ""}`}
+                  value={min ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value === "" ? null : Number(e.target.value);
+                    onPatch({ [f.min]: v, [f.max]: v, needsUpdate: false } as Partial<WorkoutSet>);
+                  }}
                 />
-                <span>{f.label}</span>
-                {!enabled && <span className="text-muted-foreground">(לא רלוונטי)</span>}
-              </label>
-              {enabled ? (
+              ) : mode === "range" ? (
                 <div className="grid grid-cols-2 gap-2">
                   {([f.min, f.max] as const).map((k, idx) => (
                     <div key={k} className="space-y-1">
@@ -486,7 +559,7 @@ function SetEditorRow({
             <p className="text-destructive">המתאמן דילג: {set.skipReason}</p>
           ) : (
             <p className="font-mono text-warning">
-              בפועל — חזרות: {set.actualReps ?? "—"} · משקל: {set.actualWeight ?? "—"} · RPE: {set.actualRpe ?? "—"}
+              בפועל — משקל: {set.actualWeight ?? "—"} · חזרות: {set.actualReps ?? "—"} · RPE: {set.actualRpe ?? "—"}
             </p>
           )}
           {set.note && <p className="text-muted-foreground">"{set.note}"</p>}
@@ -506,10 +579,80 @@ function WorkoutEditor({
   onClose: () => void;
   onSave: (w: Workout) => void;
 }) {
+  if (workout.completedAt) return <CompletedWorkoutView workout={workout} onClose={onClose} />;
+  return <WorkoutEditorInner workout={workout} onClose={onClose} onSave={onSave} />;
+}
+
+function CompletedWorkoutView({ workout, onClose }: { workout: Workout; onClose: () => void }) {
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{workout.title} — בוצע ✓</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {workout.exercises.map((ex) => (
+            <section
+              key={ex.id}
+              className={`rounded-xl border border-border p-3 ${ex.skipped ? "opacity-60" : ""}`}
+            >
+              <p className={`font-semibold ${ex.skipped ? "line-through" : ""}`}>{ex.name}</p>
+              {ex.coachNotes && <p className="mt-1 text-xs text-warning">הערת מאמן: {ex.coachNotes}</p>}
+              {ex.skipped && <p className="mt-1 text-xs text-destructive">המתאמן דילג: {ex.skipReason}</p>}
+              <div className="mt-2 space-y-2">
+                {ex.sets.map((s, i) => (
+                  <div key={s.id} className="rounded-lg border border-border p-2 text-sm">
+                    <p className="mb-1 text-xs font-semibold">סט {i + 1}</p>
+                    {s.skipped ? (
+                      <p className="text-destructive">דילוג: {s.skipReason}</p>
+                    ) : (
+                      <div className="grid gap-1 font-mono text-xs sm:grid-cols-3">
+                        <p>
+                          משקל: <span className="text-muted-foreground">{targetText(s, "weight")}</span> →{" "}
+                          <span className="text-accent">{s.actualWeight ?? "—"}</span>
+                        </p>
+                        <p>
+                          חזרות: <span className="text-muted-foreground">{targetText(s, "reps")}</span> →{" "}
+                          <span className="text-accent">{s.actualReps ?? "—"}</span>
+                        </p>
+                        <p>
+                          RPE: <span className="text-muted-foreground">{targetText(s, "rpe")}</span> →{" "}
+                          <span className="text-accent">{s.actualRpe ?? "—"}</span>
+                        </p>
+                      </div>
+                    )}
+                    {s.note && <p className="mt-1 text-xs text-muted-foreground">"{s.note}"</p>}
+                    <SetVideoPlayer videoId={s.videoId} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+          {workout.exercises.length === 0 && <p className="text-muted-foreground">אין תרגילים באימון זה.</p>}
+        </div>
+        <DialogFooter>
+          <Button onClick={onClose}>סגור</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function WorkoutEditorInner({
+  workout,
+  onClose,
+  onSave,
+}: {
+  workout: Workout;
+  onClose: () => void;
+  onSave: (w: Workout) => void;
+}) {
   const [draft, setDraft] = useState<Workout>(workout);
   const [newExercise, setNewExercise] = useState("");
 
   const update = (fn: (w: Workout) => Workout) => setDraft((d) => fn(d));
+
+  if (workout.completedAt) return <CompletedWorkoutView workout={workout} onClose={onClose} />;
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
