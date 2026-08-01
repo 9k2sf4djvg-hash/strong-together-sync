@@ -52,16 +52,20 @@ function LoginPage() {
     <div className="min-h-screen bg-background text-foreground">
       <AppHeader />
       <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-12">
-        <div className="text-center">
-          <span className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground">
+        <div className="animate-fade-up text-center">
+          <span className="gradient-brand glow-primary mx-auto mb-4 grid size-16 place-items-center rounded-2xl text-white">
             <Dumbbell className="size-7" />
           </span>
-          <h1 className="text-3xl font-bold">התחברות</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">התחברות</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             מאמנים בונים בלוקים, מתאמנים מבצעים אימונים.
           </p>
         </div>
-        <form onSubmit={submit} className="space-y-4 rounded-2xl border border-border bg-card p-5">
+        <form
+          onSubmit={submit}
+          className="glass-card animate-fade-up space-y-4 rounded-3xl p-5"
+          style={{ animationDelay: "60ms" }}
+        >
           <div className="space-y-2">
             <Label htmlFor="email">אימייל</Label>
             <Input
@@ -85,11 +89,14 @@ function LoginPage() {
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full">
+          <Button type="submit" size="lg" className="w-full">
             כניסה
           </Button>
         </form>
-        <div className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+        <div
+          className="animate-fade-up rounded-2xl border border-dashed border-primary/30 p-4 text-sm text-muted-foreground"
+          style={{ animationDelay: "120ms" }}
+        >
           <p className="mb-2 font-semibold text-foreground">משתמשי דמו</p>
           <button
             type="button"
