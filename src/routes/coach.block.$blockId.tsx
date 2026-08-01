@@ -378,7 +378,6 @@ function WorkoutEditor({
   onSave: (w: Workout) => void;
 }) {
   const [draft, setDraft] = useState<Workout>(workout);
-  const [custom, setCustom] = useState(!WORKOUT_TITLES.includes(workout.title));
   const [newExercise, setNewExercise] = useState("");
 
   const update = (fn: (w: Workout) => Workout) => setDraft((d) => fn(d));
@@ -393,35 +392,11 @@ function WorkoutEditor({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>כותרת אימון</Label>
-            <Select
-              value={custom ? "custom" : draft.title}
-              onValueChange={(v) => {
-                if (v === "custom") setCustom(true);
-                else {
-                  setCustom(false);
-                  update((w) => ({ ...w, title: v }));
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="בחר כותרת" />
-              </SelectTrigger>
-              <SelectContent>
-                {WORKOUT_TITLES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-                <SelectItem value="custom">כתיבה חופשית</SelectItem>
-              </SelectContent>
-            </Select>
-            {custom && (
-              <Input
-                value={draft.title}
-                placeholder="כותרת חופשית"
-                onChange={(e) => update((w) => ({ ...w, title: e.target.value }))}
-              />
-            )}
+            <Input
+              value={draft.title}
+              placeholder="לדוגמה: רגליים"
+              onChange={(e) => update((w) => ({ ...w, title: e.target.value }))}
+            />
           </div>
 
           {draft.exercises.map((ex, exIdx) => (
