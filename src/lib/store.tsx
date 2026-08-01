@@ -166,7 +166,9 @@ interface Ctx {
   theme: "dark" | "light";
   toggleTheme: () => void;
   updateBlock: (blockId: string, fn: (b: Block) => Block) => void;
-  notify: (to: Role, text: string) => void;
+  notify: (to: Role, text: string, toUserId?: number, fromUserId?: number) => void;
+  markNotificationsRead: (userId: number) => void;
+  dismissNotification: (id: string) => void;
 }
 
 const StoreContext = createContext<Ctx | null>(null);
@@ -228,10 +230,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const notify = useCallback(
-    (to: Role, text: string) =>
+    (to: Role, text: string, toUserId?: number, fromUserId?: number) =>
       setRaw((s) => ({
         ...s,
-        notifications: [{ id: uid(), to, text, createdAt: Date.now() }, ...s.notifications],
+        notifications: [
+          { id: uid(), to, toUserId, fromUserId, text, createdAt: Date.now() },
+          ...s.notifications,
+        ],
+      })),
+    [],
+  );
+
+  const markNotificationsRead = useCallback(
+    (userId: number) =>
+      setRaw((s) => ({
+        ...s,
+        notifications: s.notifications.map((n) =>
+          n.toUserId === userId && !n.read ? { ...n, read: true } : n,
+        ),
+      })),
+    [],
+  );
+
+  const dismissNotification = useCallback(
+    (id: string) =>
+      setRaw((s) => ({
+        ...s,
+        notifications: s.notifications.map((n) => (n.id === id ? { ...n, dismissed: true } : n)),
       })),
     [],
   );
@@ -248,8 +273,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
       updateBlock,
       notify,
+      markNotificationsRead,
+      dismissNotification,
     }),
-    [hydrated, state, setState, user, login, logout, theme, updateBlock, notify],
+    [
+      hydrated,
+      state,
+      setState,
+      user,
+      login,
+      logout,
+      theme,
+      updateBlock,
+      notify,
+      markNotificationsRead,
+      dismissNotification,
+    ],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
