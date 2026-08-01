@@ -550,7 +550,8 @@ function WorkoutEditor({
   onClose: () => void;
   onSave: (w: Workout) => void;
 }) {
-  return null;
+  if (workout.completedAt) return <CompletedWorkoutView workout={workout} onClose={onClose} />;
+  return <WorkoutEditorInner workout={workout} onClose={onClose} onSave={onSave} />;
 }
 
 function CompletedWorkoutView({ workout, onClose }: { workout: Workout; onClose: () => void }) {
