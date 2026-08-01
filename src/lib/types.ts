@@ -60,6 +60,7 @@ export interface Block {
   totalWeeks: number;
   workoutsPerWeek: number;
   currentWeek: number;
+  completedAt?: number | null;
   weeks: Week[];
 }
 

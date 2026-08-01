@@ -280,12 +280,29 @@ function BlockPage() {
                     <Plus className="size-4" /> הוסף אימון
                   </Button>
                 </div>
+                {block.currentWeek === week.weekNumber && !block.completedAt && (
+                  <Button size="sm" variant="secondary" className="mt-3" onClick={finishBlock}>
+                    <Check className="size-4" /> סיים בלוק
+                  </Button>
+                )}
               </section>
             );
           })}
           <Button variant="outline" className="w-full" onClick={addWeek}>
             <Plus className="size-4" /> הוסף שבוע
           </Button>
+          {block.completedAt ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-success/40 bg-success/10 p-4">
+              <p className="font-semibold text-success">הבלוק הושלם ✓</p>
+              <Button size="sm" variant="outline" onClick={reopenBlock}>
+                פתח מחדש
+              </Button>
+            </div>
+          ) : (
+            <Button variant="secondary" className="w-full" onClick={finishBlock}>
+              <Check className="size-4" /> סיים בלוק
+            </Button>
+          )}
         </div>
       </main>
 
