@@ -67,9 +67,12 @@ export interface Block {
 export interface AppNotification {
   id: string;
   to: Role;
+  toUserId?: number;
+  fromUserId?: number;
   text: string;
   createdAt: number;
   read?: boolean;
+  dismissed?: boolean;
 }
 
 export interface AppState {
