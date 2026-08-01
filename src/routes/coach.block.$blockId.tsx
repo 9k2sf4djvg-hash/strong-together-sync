@@ -103,6 +103,7 @@ function BlockPage() {
   };
 
   const publishWeek = (week: Week) => {
+
     updateBlock(block.id, (b) => ({
       ...b,
       currentWeek: week.weekNumber,
