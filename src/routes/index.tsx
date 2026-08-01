@@ -49,19 +49,25 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground">
       <AppHeader />
       <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-12">
-        <div className="text-center">
-          <span className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground">
+        <div className="animate-rise text-center">
+          <span className="gradient-surface mx-auto mb-4 grid size-14 place-items-center rounded-2xl shadow-[0_0_28px_color-mix(in_oklab,var(--primary)_45%,transparent)]">
             <Dumbbell className="size-7" />
           </span>
-          <h1 className="text-3xl font-bold">התחברות</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight">
+            <span className="gradient-text">Strong Together</span>
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             מאמנים בונים בלוקים, מתאמנים מבצעים אימונים.
           </p>
         </div>
-        <form onSubmit={submit} className="space-y-4 rounded-2xl border border-border bg-card p-5">
+        <form
+          onSubmit={submit}
+          className="glass-card animate-rise space-y-4 rounded-2xl p-5"
+          style={{ animationDelay: "60ms" }}
+        >
           <div className="space-y-2">
             <Label htmlFor="email">אימייל</Label>
             <Input
@@ -85,22 +91,28 @@ function LoginPage() {
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full">
+          <Button
+            type="submit"
+            className="press gradient-surface min-h-11 w-full shadow-[0_0_20px_color-mix(in_oklab,var(--primary)_40%,transparent)] hover:opacity-95"
+          >
             כניסה
           </Button>
         </form>
-        <div className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+        <div
+          className="animate-rise rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground"
+          style={{ animationDelay: "120ms" }}
+        >
           <p className="mb-2 font-semibold text-foreground">משתמשי דמו</p>
           <button
             type="button"
-            className="block w-full rounded-lg px-2 py-1 text-start hover:bg-muted"
+            className="block w-full rounded-lg px-2 py-2 text-start transition-colors hover:bg-muted"
             onClick={() => setEmail("coach@example.com")}
           >
             מאמן: coach@example.com
           </button>
           <button
             type="button"
-            className="block w-full rounded-lg px-2 py-1 text-start hover:bg-muted"
+            className="block w-full rounded-lg px-2 py-2 text-start transition-colors hover:bg-muted"
             onClick={() => setEmail("dan@example.com")}
           >
             מתאמן: dan@example.com
