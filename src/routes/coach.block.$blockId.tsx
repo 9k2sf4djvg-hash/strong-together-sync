@@ -213,6 +213,15 @@ function BlockPage() {
                     <Button size="sm" variant="outline" onClick={() => duplicateWeek(week)}>
                       <Copy className="size-4" /> הכפל שבוע
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => deleteWeek(week)}
+                      aria-label={`מחק שבוע ${week.weekNumber}`}
+                    >
+                      <Trash2 className="size-4" /> מחק שבוע
+                    </Button>
                   </div>
                 </div>
                 {needsUpdate && (
@@ -249,6 +258,9 @@ function BlockPage() {
               </section>
             );
           })}
+          <Button variant="outline" className="w-full" onClick={addWeek}>
+            <Plus className="size-4" /> הוסף שבוע
+          </Button>
         </div>
       </main>
 
