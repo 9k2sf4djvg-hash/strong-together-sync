@@ -39,6 +39,9 @@ function CoachHome() {
   const [weeks, setWeeks] = useState("4");
   const [perWeek, setPerWeek] = useState("3");
   const [traineeId, setTraineeId] = useState("");
+  const [detail, setDetail] = useState<null | "trainees" | "blocks" | "workouts" | "completion">(
+    null,
+  );
 
   useEffect(() => {
     if (!hydrated) return;
@@ -51,9 +54,11 @@ function CoachHome() {
   const trainees = state.users.filter((u) => u.role === "trainee");
 
   const allWorkouts = state.blocks.flatMap((b) =>
-    b.weeks.filter((w) => w.weekNumber === b.currentWeek).flatMap((w) => w.workouts),
+    b.weeks
+      .filter((w) => w.weekNumber === b.currentWeek)
+      .flatMap((w) => w.workouts.map((wo) => ({ workout: wo, block: b, week: w }))),
   );
-  const completedWorkouts = allWorkouts.filter((w) => w.completedAt).length;
+  const completedWorkouts = allWorkouts.filter((x) => x.workout.completedAt).length;
   const completionRate = allWorkouts.length
     ? Math.round((completedWorkouts / allWorkouts.length) * 100)
     : 0;
@@ -152,14 +157,28 @@ function CoachHome() {
         </div>
 
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard icon={Users} label="מתאמנים פעילים" value={trainees.length} index={0} />
-          <StatCard icon={Layers} label="בלוקים פעילים" value={state.blocks.length} tone="violet" index={1} />
+          <StatCard
+            icon={Users}
+            label="מתאמנים פעילים"
+            value={trainees.length}
+            index={0}
+            onClick={() => setDetail("trainees")}
+          />
+          <StatCard
+            icon={Layers}
+            label="בלוקים פעילים"
+            value={state.blocks.length}
+            tone="violet"
+            index={1}
+            onClick={() => setDetail("blocks")}
+          />
           <StatCard
             icon={Activity}
             label="אימונים השבוע"
             value={allWorkouts.length}
             tone="accent"
             index={2}
+            onClick={() => setDetail("workouts")}
           />
           <StatCard
             icon={CheckCircle2}
@@ -169,8 +188,89 @@ function CoachHome() {
             trend={completionRate >= 50 ? "up" : "down"}
             tone="success"
             index={3}
+            onClick={() => setDetail("completion")}
           />
         </div>
+
+        <Dialog open={detail !== null} onOpenChange={(o) => !o && setDetail(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {detail === "trainees"
+                  ? "מתאמנים פעילים"
+                  : detail === "blocks"
+                    ? "בלוקים פעילים"
+                    : detail === "workouts"
+                      ? "אימונים השבוע"
+                      : "אחוז השלמה"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+              {detail === "trainees" &&
+                trainees.map((t) => {
+                  const b = state.blocks.find((x) => x.traineeId === t.id);
+                  return (
+                    <div key={t.id} className="glass-card rounded-xl p-3">
+                      <p className="font-semibold">{t.name}</p>
+                      <p className="text-xs text-muted-foreground">{t.email}</p>
+                      {b ? (
+                        <Link
+                          to="/coach/block/$blockId"
+                          params={{ blockId: b.id }}
+                          onClick={() => setDetail(null)}
+                          className="mt-2 inline-block text-sm text-primary"
+                        >
+                          פתח בלוק "{b.name}" (שבוע {b.currentWeek}/{b.totalWeeks})
+                        </Link>
+                      ) : (
+                        <p className="mt-1 text-sm text-muted-foreground">אין בלוק פעיל</p>
+                      )}
+                    </div>
+                  );
+                })}
+
+              {detail === "blocks" &&
+                state.blocks.map((b) => (
+                  <Link
+                    key={b.id}
+                    to="/coach/block/$blockId"
+                    params={{ blockId: b.id }}
+                    onClick={() => setDetail(null)}
+                    className="glass-card block rounded-xl p-3"
+                  >
+                    <p className="font-semibold">{b.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {state.users.find((u) => u.id === b.traineeId)?.name} · שבוע {b.currentWeek}/
+                      {b.totalWeeks} · {b.workoutsPerWeek} אימונים בשבוע
+                    </p>
+                  </Link>
+                ))}
+
+              {(detail === "workouts" || detail === "completion") &&
+                allWorkouts.map(({ workout, block, week }) => (
+                  <Link
+                    key={workout.id}
+                    to="/coach/block/$blockId"
+                    params={{ blockId: block.id }}
+                    onClick={() => setDetail(null)}
+                    className="glass-card block rounded-xl p-3"
+                  >
+                    <p className="font-semibold">{workout.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {block.name} · שבוע {week.weekNumber} · {workout.exercises.length} תרגילים ·{" "}
+                      {workout.completedAt ? "הושלם" : "טרם הושלם"}
+                    </p>
+                  </Link>
+                ))}
+
+              {((detail === "trainees" && trainees.length === 0) ||
+                (detail === "blocks" && state.blocks.length === 0) ||
+                ((detail === "workouts" || detail === "completion") && allWorkouts.length === 0)) && (
+                <p className="text-sm text-muted-foreground">אין נתונים להצגה</p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <h2 className="mb-3 text-lg font-bold">המתאמנים שלי</h2>
         <div className="grid gap-3 sm:grid-cols-2">
