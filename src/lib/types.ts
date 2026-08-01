@@ -72,10 +72,22 @@ export interface AppNotification {
   read?: boolean;
 }
 
+export interface ChatMessage {
+  id: string;
+  traineeId: number;
+  fromRole: Role;
+  fromUserId: number;
+  text: string;
+  createdAt: number;
+  readByCoach?: boolean;
+  readByTrainee?: boolean;
+}
+
 export interface AppState {
   users: User[];
   blocks: Block[];
   notifications: AppNotification[];
+  messages: ChatMessage[];
 }
 
 export const WORKOUT_TITLES = ["Legs", "Upper Body", "Chest", "Back", "Arms", "Shoulders"];
