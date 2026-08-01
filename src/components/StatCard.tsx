@@ -10,6 +10,7 @@ export function StatCard({
   trend = "flat",
   tone = "primary",
   index = 0,
+  onClick,
 }: {
   icon: LucideIcon;
   label: string;
@@ -18,6 +19,7 @@ export function StatCard({
   trend?: "up" | "down" | "flat";
   tone?: "primary" | "violet" | "accent" | "success";
   index?: number;
+  onClick?: () => void;
 }) {
   const toneClass = {
     primary: "text-primary bg-primary/12",
@@ -28,8 +30,14 @@ export function StatCard({
   const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
 
   return (
-    <div
-      className="glass-card lift animate-fade-up rounded-2xl p-4"
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      className={cn(
+        "glass-card lift animate-fade-up rounded-2xl p-4 text-right",
+        onClick && "cursor-pointer transition-transform hover:scale-[1.02]",
+      )}
       style={{ animationDelay: `${index * 50}ms` }}
     >
       <div className="flex items-center justify-between gap-2">
@@ -47,7 +55,7 @@ export function StatCard({
       <p className="mt-3 text-2xl font-extrabold tracking-tight">{value}</p>
       <p className="truncate text-sm text-muted-foreground">{label}</p>
       {hint ? <p className="mt-1 truncate text-xs text-muted-foreground/80">{hint}</p> : null}
-    </div>
+    </button>
   );
 }
 
