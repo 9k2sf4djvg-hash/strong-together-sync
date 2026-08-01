@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { SetVideoPlayer } from "@/components/SetVideo";
 import type { WorkoutSet } from "@/lib/types";
+import { targetText } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
@@ -530,7 +530,7 @@ function SetEditorRow({
             <p className="text-destructive">המתאמן דילג: {set.skipReason}</p>
           ) : (
             <p className="font-mono text-warning">
-              בפועל — חזרות: {set.actualReps ?? "—"} · משקל: {set.actualWeight ?? "—"} · RPE: {set.actualRpe ?? "—"}
+              בפועל — משקל: {set.actualWeight ?? "—"} · חזרות: {set.actualReps ?? "—"} · RPE: {set.actualRpe ?? "—"}
             </p>
           )}
           {set.note && <p className="text-muted-foreground">"{set.note}"</p>}
