@@ -550,6 +550,73 @@ function WorkoutEditor({
   onClose: () => void;
   onSave: (w: Workout) => void;
 }) {
+  return null;
+}
+
+function CompletedWorkoutView({ workout, onClose }: { workout: Workout; onClose: () => void }) {
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{workout.title} — בוצע ✓</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {workout.exercises.map((ex) => (
+            <section
+              key={ex.id}
+              className={`rounded-xl border border-border p-3 ${ex.skipped ? "opacity-60" : ""}`}
+            >
+              <p className={`font-semibold ${ex.skipped ? "line-through" : ""}`}>{ex.name}</p>
+              {ex.coachNotes && <p className="mt-1 text-xs text-warning">הערת מאמן: {ex.coachNotes}</p>}
+              {ex.skipped && <p className="mt-1 text-xs text-destructive">המתאמן דילג: {ex.skipReason}</p>}
+              <div className="mt-2 space-y-2">
+                {ex.sets.map((s, i) => (
+                  <div key={s.id} className="rounded-lg border border-border p-2 text-sm">
+                    <p className="mb-1 text-xs font-semibold">סט {i + 1}</p>
+                    {s.skipped ? (
+                      <p className="text-destructive">דילוג: {s.skipReason}</p>
+                    ) : (
+                      <div className="grid gap-1 font-mono text-xs sm:grid-cols-3">
+                        <p>
+                          משקל: <span className="text-muted-foreground">{targetText(s, "weight")}</span> →{" "}
+                          <span className="text-accent">{s.actualWeight ?? "—"}</span>
+                        </p>
+                        <p>
+                          חזרות: <span className="text-muted-foreground">{targetText(s, "reps")}</span> →{" "}
+                          <span className="text-accent">{s.actualReps ?? "—"}</span>
+                        </p>
+                        <p>
+                          RPE: <span className="text-muted-foreground">{targetText(s, "rpe")}</span> →{" "}
+                          <span className="text-accent">{s.actualRpe ?? "—"}</span>
+                        </p>
+                      </div>
+                    )}
+                    {s.note && <p className="mt-1 text-xs text-muted-foreground">"{s.note}"</p>}
+                    <SetVideoPlayer videoId={s.videoId} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+          {workout.exercises.length === 0 && <p className="text-muted-foreground">אין תרגילים באימון זה.</p>}
+        </div>
+        <DialogFooter>
+          <Button onClick={onClose}>סגור</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function WorkoutEditorInner({
+  workout,
+  onClose,
+  onSave,
+}: {
+  workout: Workout;
+  onClose: () => void;
+  onSave: (w: Workout) => void;
+}) {
   const [draft, setDraft] = useState<Workout>(workout);
   const [newExercise, setNewExercise] = useState("");
 
