@@ -17,14 +17,16 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
   const myNotifications = state.notifications.filter((n) => n.to === (user?.role ?? "coach"));
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-primary/15 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
         <Link to="/" className="flex min-w-0 items-center gap-2">
-          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <span className="gradient-brand grid size-9 shrink-0 place-items-center rounded-xl text-white shadow-md transition-transform duration-300 hover:rotate-12">
             <Dumbbell className="size-5" />
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-base font-bold">Strong Together</span>
+            <span className="gradient-text block truncate text-base font-extrabold tracking-tight">
+              Strong Together
+            </span>
             {subtitle ? (
               <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>
             ) : null}
@@ -36,7 +38,7 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
               <Button variant="ghost" size="icon" aria-label="התראות" className="relative">
                 <Bell className="size-5" />
                 {myNotifications.length > 0 && (
-                  <Badge className="absolute -top-1 -left-1 h-4 min-w-4 justify-center px-1 text-[10px]">
+                  <Badge className="absolute top-0 left-0 h-4 min-w-4 animate-pulse justify-center px-1 text-[10px]">
                     {myNotifications.length}
                   </Badge>
                 )}
