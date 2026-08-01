@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Check, Copy, Plus, Send, Trash2 } from "lucide-react";
+import { ArrowRight, Check, Copy, Pencil, Plus, Send, Trash2 } from "lucide-react";
 import { emptyExercise, newSet, uid, useStore } from "@/lib/store";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SetVideoPlayer } from "@/components/SetVideo";
 import type { WorkoutSet } from "@/lib/types";
 import {
@@ -19,7 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Week, Workout } from "@/lib/types";
+import type { Block, Week, Workout } from "@/lib/types";
 
 export const Route = createFileRoute("/coach/block/$blockId")({
   head: () => ({
@@ -35,9 +42,10 @@ export const Route = createFileRoute("/coach/block/$blockId")({
 
 function BlockPage() {
   const { blockId } = Route.useParams();
-  const { state, user, updateBlock, notify, hydrated } = useStore();
+  const { state, setState, user, updateBlock, notify, hydrated } = useStore();
   const navigate = useNavigate();
   const [editing, setEditing] = useState<{ week: number; workoutId: string } | null>(null);
+  const [editBlockOpen, setEditBlockOpen] = useState(false);
 
   useEffect(() => {
     if (hydrated && !user) navigate({ to: "/" });
@@ -171,6 +179,13 @@ function BlockPage() {
     }));
   };
 
+  const deleteBlock = () => {
+    if (!window.confirm(`למחוק את הבלוק "${block.name}"? הפעולה אינה הפיכה.`)) return;
+    setState((s) => ({ ...s, blocks: s.blocks.filter((b) => b.id !== block.id) }));
+    toast.success("הבלוק נמחק");
+    navigate({ to: "/coach" });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <AppHeader subtitle={`בלוק: ${block.name} · ${trainee?.name ?? ""}`} />
@@ -179,9 +194,22 @@ function BlockPage() {
           <ArrowRight className="size-4" /> חזרה לרשימת המתאמנים
         </Link>
         <h1 className="mb-1 text-2xl font-bold sm:text-3xl">{block.name}</h1>
-        <p className="mb-6 text-sm text-muted-foreground">
+        <p className="mb-3 text-sm text-muted-foreground">
           {block.totalWeeks} שבועות · {block.workoutsPerWeek} אימונים בשבוע · שבוע נוכחי {block.currentWeek}
         </p>
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => setEditBlockOpen(true)}>
+            <Pencil className="size-4" /> ערוך בלוק
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-destructive hover:text-destructive"
+            onClick={deleteBlock}
+          >
+            <Trash2 className="size-4" /> מחק בלוק
+          </Button>
+        </div>
 
         <div className="space-y-4">
           {block.weeks.map((week) => {
@@ -269,7 +297,110 @@ function BlockPage() {
           onSave={(w) => saveWorkout(editing.week, w)}
         />
       )}
+
+      {editBlockOpen && (
+        <BlockSettingsDialog
+          block={block}
+          trainees={state.users.filter((u) => u.role === "trainee")}
+          onClose={() => setEditBlockOpen(false)}
+          onSave={(patch) => {
+            updateBlock(block.id, (b) => ({ ...b, ...patch }));
+            setEditBlockOpen(false);
+            toast.success("פרטי הבלוק עודכנו");
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function BlockSettingsDialog({
+  block,
+  trainees,
+  onClose,
+  onSave,
+}: {
+  block: Block;
+  trainees: { id: number; name: string }[];
+  onClose: () => void;
+  onSave: (patch: Partial<Block>) => void;
+}) {
+  const [name, setName] = useState(block.name);
+  const [totalWeeks, setTotalWeeks] = useState(String(block.totalWeeks));
+  const [perWeek, setPerWeek] = useState(String(block.workoutsPerWeek));
+  const [currentWeek, setCurrentWeek] = useState(String(block.currentWeek));
+  const [traineeId, setTraineeId] = useState(String(block.traineeId));
+
+  const submit = () => {
+    const tw = Number(totalWeeks);
+    const pw = Number(perWeek);
+    const cw = Number(currentWeek);
+    if (!name.trim() || tw < 1 || pw < 1 || cw < 1) {
+      toast.error("יש למלא שם בלוק ומספרים חוקיים");
+      return;
+    }
+    if (tw < block.weeks.length) {
+      toast.error(`בבלוק כבר ${block.weeks.length} שבועות — מחק שבועות תחילה`);
+      return;
+    }
+    onSave({
+      name: name.trim(),
+      totalWeeks: tw,
+      workoutsPerWeek: pw,
+      currentWeek: Math.min(cw, Math.max(block.weeks.length, 1)),
+      traineeId: Number(traineeId),
+    });
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>עריכת פרטי בלוק</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>שם הבלוק</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="לדוגמה: הכנה לקיץ" />
+          </div>
+          <div className="space-y-2">
+            <Label>מתאמן</Label>
+            <Select value={traineeId} onValueChange={setTraineeId}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר מתאמן" />
+              </SelectTrigger>
+              <SelectContent>
+                {trainees.map((t) => (
+                  <SelectItem key={t.id} value={String(t.id)}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>מספר שבועות</Label>
+              <Input type="number" min={1} value={totalWeeks} onChange={(e) => setTotalWeeks(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>אימונים בשבוע</Label>
+              <Input type="number" min={1} value={perWeek} onChange={(e) => setPerWeek(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>שבוע נוכחי</Label>
+            <Input type="number" min={1} value={currentWeek} onChange={(e) => setCurrentWeek(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>
+            ביטול
+          </Button>
+          <Button onClick={submit}>שמור</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
