@@ -14,6 +14,24 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StoreProvider } from "../lib/store";
 import { Toaster } from "../components/ui/sonner";
 
+const moduleLoadRecoveryScript = `
+(() => {
+  const retryKey = "st_module_retry_at";
+  const moduleError = /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module/i;
+  const recover = (message) => {
+    if (!moduleError.test(String(message || ""))) return;
+    const now = Date.now();
+    const lastRetry = Number(sessionStorage.getItem(retryKey) || 0);
+    if (now - lastRetry < 15000) return;
+    sessionStorage.setItem(retryKey, String(now));
+    const url = new URL(window.location.href);
+    url.searchParams.set("__module_retry", String(now));
+    window.location.replace(url.toString());
+  };
+  window.addEventListener("error", (event) => recover(event.message), true);
+  window.addEventListener("unhandledrejection", (event) => recover(event.reason?.message || event.reason));
+})();`;
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -37,24 +55,9 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
   const router = useRouter();
   useEffect(() => {
-    // A stale deploy leaves the open tab pointing at chunk URLs that no longer
-    // exist ("Importing a module script failed"). One hard reload fixes it.
-    const message = String(error?.message ?? "");
-    const isStaleChunk =
-      /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module/i.test(
-        message,
-      );
-    if (isStaleChunk && typeof window !== "undefined") {
-      const key = "st_chunk_reloaded";
-      if (!sessionStorage.getItem(key)) {
-        sessionStorage.setItem(key, "1");
-        window.location.reload();
-        return;
-      }
-    }
+    console.error(error);
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
@@ -135,6 +138,7 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="he" dir="rtl" className="dark">
       <head>
+        <script dangerouslySetInnerHTML={{ __html: moduleLoadRecoveryScript }} />
         <HeadContent />
       </head>
       <body className="font-sans antialiased">
@@ -147,11 +151,6 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
-  useEffect(() => {
-    // App mounted fine — allow a future stale-chunk auto-reload.
-    sessionStorage.removeItem("st_chunk_reloaded");
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
