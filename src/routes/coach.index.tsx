@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, User } from "lucide-react";
+import { Activity, CheckCircle2, Plus, User, Users, Layers } from "lucide-react";
 import { useStore, uid } from "@/lib/store";
 import { AppHeader } from "@/components/AppHeader";
+import { EmptyState, ProgressBar, StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,6 +50,14 @@ function CoachHome() {
 
   const trainees = state.users.filter((u) => u.role === "trainee");
 
+  const allWorkouts = state.blocks.flatMap((b) =>
+    b.weeks.filter((w) => w.weekNumber === b.currentWeek).flatMap((w) => w.workouts),
+  );
+  const completedWorkouts = allWorkouts.filter((w) => w.completedAt).length;
+  const completionRate = allWorkouts.length
+    ? Math.round((completedWorkouts / allWorkouts.length) * 100)
+    : 0;
+
   const create = () => {
     const w = Number(weeks);
     const p = Number(perWeek);
@@ -85,12 +94,15 @@ function CoachHome() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <AppHeader subtitle={`מאמן · ${user.name}`} />
-      <main className="mx-auto max-w-5xl px-4 py-6">
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold sm:text-3xl">בחר מתאמן</h1>
+      <main className="mx-auto max-w-5xl px-4 py-6 pb-16">
+        <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold tracking-widest text-primary uppercase">לוח מאמן</p>
+            <h1 className="truncate text-2xl font-extrabold sm:text-3xl">שלום, {user.name}</h1>
+          </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="min-h-11">
                 <Plus className="size-4" /> בלוק חדש
               </Button>
             </DialogTrigger>
@@ -139,32 +151,65 @@ function CoachHome() {
           </Dialog>
         </div>
 
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard icon={Users} label="מתאמנים פעילים" value={trainees.length} index={0} />
+          <StatCard icon={Layers} label="בלוקים פעילים" value={state.blocks.length} tone="violet" index={1} />
+          <StatCard
+            icon={Activity}
+            label="אימונים השבוע"
+            value={allWorkouts.length}
+            tone="accent"
+            index={2}
+          />
+          <StatCard
+            icon={CheckCircle2}
+            label="אחוז השלמה"
+            value={`${completionRate}%`}
+            hint={`${completedWorkouts} מתוך ${allWorkouts.length}`}
+            trend={completionRate >= 50 ? "up" : "down"}
+            tone="success"
+            index={3}
+          />
+        </div>
+
+        <h2 className="mb-3 text-lg font-bold">המתאמנים שלי</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {state.blocks.map((b) => {
             const trainee = state.users.find((u) => u.id === b.traineeId);
+            const weekProgress = (b.currentWeek / Math.max(1, b.totalWeeks)) * 100;
             return (
               <Link
                 key={b.id}
                 to="/coach/block/$blockId"
                 params={{ blockId: b.id }}
-                className="rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary"
+                className="glass-card lift animate-fade-up rounded-2xl p-4"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-muted">
+                  <span className="gradient-brand grid size-11 shrink-0 place-items-center rounded-full text-white">
                     <User className="size-5" />
                   </span>
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{trainee?.name ?? "מתאמן"}</p>
                     <p className="truncate text-sm text-muted-foreground">
-                      בלוק: "{b.name}" (שבוע {b.currentWeek}/{b.totalWeeks})
+                      בלוק "{b.name}" · שבוע {b.currentWeek}/{b.totalWeeks}
                     </p>
                   </div>
                 </div>
+                <ProgressBar value={weekProgress} className="mt-4" />
               </Link>
             );
           })}
           {state.blocks.length === 0 && (
-            <p className="text-sm text-muted-foreground">אין עדיין בלוקים. צור בלוק חדש כדי להתחיל.</p>
+            <EmptyState
+              icon={Layers}
+              title="אין עדיין בלוקים"
+              description="צור בלוק אימונים ראשון כדי להתחיל לתכנן שבועות ולעקוב אחרי המתאמנים שלך."
+              action={
+                <Button onClick={() => setOpen(true)}>
+                  <Plus className="size-4" /> בלוק חדש
+                </Button>
+              }
+            />
           )}
         </div>
       </main>
