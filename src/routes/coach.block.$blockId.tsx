@@ -405,10 +405,18 @@ function BlockSettingsDialog({
 }
 
 const FIELDS = [
-  { key: "reps", label: "חזרות", has: "hasReps", min: "repsMin", max: "repsMax" },
   { key: "weight", label: 'משקל (ק"ג)', has: "hasWeight", min: "weightMin", max: "weightMax" },
+  { key: "reps", label: "חזרות", has: "hasReps", min: "repsMin", max: "repsMax" },
   { key: "rpe", label: "RPE (1-10)", has: "hasRpe", min: "rpeMin", max: "rpeMax" },
 ] as const;
+
+type FieldMode = "range" | "single" | "off";
+
+const MODES: { value: FieldMode; label: string }[] = [
+  { value: "range", label: "טווח" },
+  { value: "single", label: "ערך יחיד" },
+  { value: "off", label: "לא רלוונטי" },
+];
 
 function SetEditorRow({
   set,
@@ -440,17 +448,53 @@ function SetEditorRow({
       <div className="space-y-3">
         {FIELDS.map((f) => {
           const enabled = set[f.has];
+          const min = set[f.min];
+          const max = set[f.max];
+          const mode: FieldMode = !enabled ? "off" : min === max ? "single" : "range";
+          const setMode = (m: FieldMode) => {
+            if (m === "off") {
+              onPatch({ [f.has]: false } as Partial<WorkoutSet>);
+            } else if (m === "single") {
+              const v = min ?? max ?? null;
+              onPatch({ [f.has]: true, [f.min]: v, [f.max]: v, needsUpdate: false } as Partial<WorkoutSet>);
+            } else {
+              const v = min ?? max ?? null;
+              onPatch({ [f.has]: true, [f.min]: v, [f.max]: v == null ? null : v } as Partial<WorkoutSet>);
+            }
+          };
           return (
             <div key={f.key} className="space-y-1">
-              <label className="flex items-center gap-2 text-xs">
-                <Checkbox
-                  checked={enabled}
-                  onCheckedChange={(v) => onPatch({ [f.has]: v === true } as Partial<WorkoutSet>)}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-medium">{f.label}</span>
+                <div className="flex overflow-hidden rounded-lg border border-border">
+                  {MODES.map((m) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => setMode(m.value)}
+                      className={`px-2 py-1 text-[11px] transition-colors ${
+                        mode === m.value
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {mode === "single" ? (
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  className={`font-mono ${set.needsUpdate ? "border-destructive text-destructive" : ""}`}
+                  value={min ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value === "" ? null : Number(e.target.value);
+                    onPatch({ [f.min]: v, [f.max]: v, needsUpdate: false } as Partial<WorkoutSet>);
+                  }}
                 />
-                <span>{f.label}</span>
-                {!enabled && <span className="text-muted-foreground">(לא רלוונטי)</span>}
-              </label>
-              {enabled ? (
+              ) : mode === "range" ? (
                 <div className="grid grid-cols-2 gap-2">
                   {([f.min, f.max] as const).map((k, idx) => (
                     <div key={k} className="space-y-1">
