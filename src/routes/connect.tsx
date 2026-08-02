@@ -40,11 +40,17 @@ function ConnectPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.trim().length < 4) toast.error("הזן קוד תקין");
+    if (code.trim().length < 4) {
+      toast.error("הזן קוד תקין");
+      return;
+    }
     setBusy(true);
     const { error } = await redeemInviteCode(code);
     setBusy(false);
-    if (error) toast.error(error);
+    if (error) {
+      toast.error(error);
+      return;
+    }
     toast.success("התחברת למאמן בהצלחה!");
     navigate({ to: "/trainee" });
   };
