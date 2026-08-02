@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Activity, CheckCircle2, Plus, User, Users, Layers } from "lucide-react";
+import { Activity, CheckCircle2, Copy, Plus, User, UserPlus, Users, Layers } from "lucide-react";
 import { useStore, uid } from "@/lib/store";
 import { AppHeader } from "@/components/AppHeader";
 import { EmptyState, ProgressBar, StatCard } from "@/components/StatCard";
@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Block, Week } from "@/lib/types";
+import type { Week } from "@/lib/types";
 
 export const Route = createFileRoute("/coach/")({
   head: () => ({
@@ -32,9 +32,11 @@ export const Route = createFileRoute("/coach/")({
 });
 
 function CoachHome() {
-  const { state, setState, user, hydrated } = useStore();
+  const { state, createBlock, user, hydrated, createInviteCode } = useStore();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
   const [name, setName] = useState("");
   const [weeks, setWeeks] = useState("4");
   const [perWeek, setPerWeek] = useState("3");
@@ -50,7 +52,7 @@ function CoachHome() {
 
   if (!user || user.role !== "coach") return null;
 
-  const trainees = state.users.filter((u) => u.role === "trainee");
+  const trainees = state.users.filter((u) => u.role === "trainee" && u.coachId === user.id);
 
   const allWorkouts = state.blocks.flatMap((b) =>
     b.weeks
@@ -62,7 +64,18 @@ function CoachHome() {
     ? Math.round((completedWorkouts / allWorkouts.length) * 100)
     : 0;
 
-  const create = () => {
+  const openInvite = async () => {
+    setInviteOpen(true);
+    setInviteCode("");
+    const code = await createInviteCode();
+    if (!code) {
+      toast.error("יצירת הקוד נכשלה");
+      return;
+    }
+    setInviteCode(code);
+  };
+
+  const create = async () => {
     const w = Number(weeks);
     const p = Number(perWeek);
     if (!name.trim() || !traineeId || w < 1 || p < 1) {
@@ -78,21 +91,23 @@ function CoachHome() {
         exercises: [],
       })),
     };
-    const block: Block = {
-      id: uid(),
+    const blockId = await createBlock({
       coachId: user.id,
-      traineeId: Number(traineeId),
+      traineeId,
       name: name.trim(),
       totalWeeks: w,
       workoutsPerWeek: p,
       currentWeek: 1,
       weeks: [week],
-    };
-    setState((s) => ({ ...s, blocks: [...s.blocks, block] }));
+    });
+    if (!blockId) {
+      toast.error("יצירת הבלוק נכשלה");
+      return;
+    }
     setOpen(false);
     setName("");
     toast.success("הבלוק נוצר");
-    navigate({ to: "/coach/block/$blockId", params: { blockId: block.id } });
+    navigate({ to: "/coach/block/$blockId", params: { blockId } });
   };
 
   return (
@@ -104,6 +119,10 @@ function CoachHome() {
             <p className="text-xs font-semibold tracking-widest text-primary uppercase">לוח מאמן</p>
             <h1 className="truncate text-2xl font-extrabold sm:text-3xl">שלום, {user.name}</h1>
           </div>
+          <div className="flex items-center gap-2">
+          <Button variant="outline" className="min-h-11" onClick={() => void openInvite()}>
+            <UserPlus className="size-4" /> הזמן מתאמן
+          </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button className="min-h-11">
@@ -149,11 +168,40 @@ function CoachHome() {
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   ביטול
                 </Button>
-                <Button onClick={create}>המשך</Button>
+                <Button onClick={() => void create()}>המשך</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
+
+        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>קוד הזמנה למתאמן</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              שלח את הקוד למתאמן. לאחר שייכנס לאפליקציה ויזין אותו, הוא יתחבר אליך אוטומטית.
+            </p>
+            <div className="glass-card rounded-2xl p-5 text-center">
+              <span dir="ltr" className="gradient-text text-3xl font-extrabold tracking-[0.3em]">
+                {inviteCode || "······"}
+              </span>
+            </div>
+            <DialogFooter>
+              <Button
+                className="w-full"
+                disabled={!inviteCode}
+                onClick={() => {
+                  void navigator.clipboard.writeText(inviteCode);
+                  toast.success("הקוד הועתק");
+                }}
+              >
+                <Copy className="size-4" /> העתק קוד
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard

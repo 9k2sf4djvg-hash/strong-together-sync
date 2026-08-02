@@ -1,18 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { AppState, Block, Exercise, Role, User, Workout, WorkoutSet } from "./types";
+import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
+import type { AppNotification, AppState, Block, Exercise, Role, User, WorkoutSet } from "./types";
 
-const STATE_KEY = "st_state_v1";
-const SESSION_KEY = "st_session_v1";
 const THEME_KEY = "st_theme_v1";
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
-
-const users: User[] = [
-  { id: 1, name: "אלכס כהן", email: "coach@example.com", role: "coach" },
-  { id: 2, name: "דן לוי", email: "dan@example.com", role: "trainee" },
-  { id: 3, name: "נועה ברק", email: "noa@example.com", role: "trainee" },
-];
 
 function mkSet(
   repsMin: number | null,
@@ -40,162 +34,144 @@ function mkSet(
   };
 }
 
-type LegacySet = WorkoutSet & { reps?: number | null; weight?: number | null; rpe?: number | null };
+/* ---------- row mappers ---------- */
 
-/** Migrates sets saved before ranges/toggles existed. */
-function migrateState(s: AppState): AppState {
-  return {
-    ...s,
-    blocks: (s.blocks ?? []).map((b) => ({
-      ...b,
-      weeks: b.weeks.map((w) => ({
-        ...w,
-        workouts: w.workouts.map((wo) => ({
-          ...wo,
-          exercises: wo.exercises.map((e) => ({
-            ...e,
-            sets: e.sets.map((raw) => {
-              const set = raw as LegacySet;
-              if ("hasReps" in set && set.hasReps !== undefined) return set as WorkoutSet;
-              const { reps, weight, rpe, ...rest } = set;
-              return {
-                ...rest,
-                hasReps: reps != null,
-                repsMin: reps ?? null,
-                repsMax: reps ?? null,
-                hasWeight: weight != null,
-                weightMin: weight ?? null,
-                weightMax: weight ?? null,
-                hasRpe: rpe != null,
-                rpeMin: rpe ?? null,
-                rpeMax: rpe ?? null,
-                actualReps: null,
-                actualWeight: null,
-              } as WorkoutSet;
-            }),
-          })),
-        })),
-      })),
-    })),
-  };
-}
+type BlockRow = {
+  id: string;
+  coach_id: string;
+  trainee_id: string;
+  name: string;
+  total_weeks: number;
+  workouts_per_week: number;
+  current_week: number;
+  completed_at: number | null;
+  weeks: unknown;
+};
 
-function seedBlock(): Block {
-  const week1 = {
-    weekNumber: 1,
-    published: true,
-    reviewed: true,
-    workouts: [
-      {
-        id: uid(),
-        title: "Legs",
-        exercises: [
-          {
-            id: uid(),
-            name: "Squat",
-            coachNotes: "שמור על הגב ישר",
-            sets: [mkSet(5, 8, 90, 100, 7, 9), mkSet(5, 8, 90, 100, 7, 9), mkSet(3, 5, 100, 110, 8, 9)],
-          },
-          {
-            id: uid(),
-            name: "Leg Press",
-            coachNotes: "",
-            sets: [mkSet(8, 12, 140, 150, 7, 8), mkSet(8, 12, 140, 150, 7, 9)],
-          },
-        ],
-      },
-      {
-        id: uid(),
-        title: "Upper Body",
-        exercises: [
-          {
-            id: uid(),
-            name: "Bench Press",
-            coachNotes: "טמפו איטי בירידה",
-            sets: [mkSet(6, 8, 65, 70, 7, 8), mkSet(6, 8, 65, 70, 8, 9)],
-          },
-          {
-            id: uid(),
-            name: "Barbell Row",
-            coachNotes: "",
-            sets: [mkSet(8, 10, 55, 60, 7, 8), mkSet(8, 10, 55, 60, 7, 9)],
-          },
-        ],
-      },
-    ] as Workout[],
-  };
-  const week2 = {
-    weekNumber: 2,
-    published: true,
-    reviewed: false,
-    workouts: week1.workouts.map((w) => ({
-      ...w,
-      id: uid(),
-      exercises: w.exercises.map((e) => ({
-        ...e,
-        id: uid(),
-        sets: e.sets.map((s) => ({ ...s, id: uid(), actualRpe: null, needsUpdate: true })),
-      })),
-    })),
-  };
-  return {
-    id: uid(),
-    coachId: 1,
-    traineeId: 2,
-    name: "הכנה לקיץ",
-    totalWeeks: 8,
-    workoutsPerWeek: 2,
-    currentWeek: 2,
-    weeks: [week1, week2],
-  };
-}
-
-const initialState = (): AppState => ({
-  users,
-  blocks: [seedBlock()],
-  notifications: [],
+const toBlock = (r: BlockRow): Block => ({
+  id: r.id,
+  coachId: r.coach_id,
+  traineeId: r.trainee_id,
+  name: r.name,
+  totalWeeks: r.total_weeks,
+  workoutsPerWeek: r.workouts_per_week,
+  currentWeek: r.current_week,
+  completedAt: r.completed_at ?? null,
+  weeks: (Array.isArray(r.weeks) ? r.weeks : []) as Block["weeks"],
 });
+
+const fromBlock = (b: Block) => ({
+  id: b.id,
+  coach_id: b.coachId,
+  trainee_id: b.traineeId,
+  name: b.name,
+  total_weeks: b.totalWeeks,
+  workouts_per_week: b.workoutsPerWeek,
+  current_week: b.currentWeek,
+  completed_at: b.completedAt ?? null,
+  weeks: b.weeks as unknown as Json,
+});
+
+type ProfileRow = { id: string; name: string; email: string; role: Role; coach_id: string | null };
+const toUser = (p: ProfileRow): User => ({
+  id: p.id,
+  name: p.name || p.email,
+  email: p.email,
+  role: p.role,
+  coachId: p.coach_id,
+});
+
+type NotifRow = {
+  id: string;
+  to_user_id: string;
+  from_user_id: string | null;
+  to_role: Role;
+  text: string;
+  read: boolean;
+  dismissed: boolean;
+  created_at: string;
+};
+const toNotif = (n: NotifRow): AppNotification => ({
+  id: n.id,
+  to: n.to_role,
+  toUserId: n.to_user_id,
+  fromUserId: n.from_user_id ?? undefined,
+  text: n.text,
+  createdAt: new Date(n.created_at).getTime(),
+  read: n.read,
+  dismissed: n.dismissed,
+});
+
+/* ---------- context ---------- */
 
 interface Ctx {
   hydrated: boolean;
+  loading: boolean;
   state: AppState;
-  setState: (fn: (s: AppState) => AppState) => void;
   user: User | null;
-  login: (email: string) => User | null;
-  logout: () => void;
+  refresh: () => Promise<void>;
+  logout: () => Promise<void>;
   theme: "dark" | "light";
   toggleTheme: () => void;
   updateBlock: (blockId: string, fn: (b: Block) => Block) => void;
-  notify: (to: Role, text: string, toUserId?: number, fromUserId?: number) => void;
-  markNotificationsRead: (userId: number) => void;
+  createBlock: (b: Omit<Block, "id">) => Promise<string | null>;
+  deleteBlock: (blockId: string) => Promise<void>;
+  notify: (to: Role, text: string, toUserId?: string, fromUserId?: string) => void;
+  markNotificationsRead: (userId: string) => void;
   dismissNotification: (id: string) => void;
+  createInviteCode: () => Promise<string | null>;
+  redeemInviteCode: (code: string) => Promise<{ error?: string }>;
+  updateProfile: (patch: { name?: string; role?: Role }) => Promise<void>;
 }
 
+const emptyState: AppState = { users: [], blocks: [], notifications: [] };
 const StoreContext = createContext<Ctx | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, setRaw] = useState<AppState>(initialState);
+  const [state, setRaw] = useState<AppState>(emptyState);
   const [user, setUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [hydrated, setHydrated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  useEffect(() => {
-    try {
-      const s = localStorage.getItem(STATE_KEY);
-      if (s) setRaw(migrateState(JSON.parse(s) as AppState));
-      const sess = localStorage.getItem(SESSION_KEY);
-      if (sess) setUser(JSON.parse(sess) as User);
-      const t = localStorage.getItem(THEME_KEY) as "dark" | "light" | null;
-      if (t) setTheme(t);
-    } catch {
-      /* ignore */
+  const load = useCallback(async () => {
+    const { data: auth } = await supabase.auth.getUser();
+    const authUser = auth.user;
+    if (!authUser) {
+      setUser(null);
+      setRaw(emptyState);
+      setLoading(false);
+      setHydrated(true);
+      return;
     }
+
+    const [{ data: profiles }, { data: blocks }, { data: notifs }] = await Promise.all([
+      supabase.from("profiles").select("id,name,email,role,coach_id"),
+      supabase.from("blocks").select("*"),
+      supabase.from("notifications").select("*").order("created_at", { ascending: false }),
+    ]);
+
+    const users = ((profiles ?? []) as ProfileRow[]).map(toUser);
+    setUser(users.find((u) => u.id === authUser.id) ?? null);
+    setRaw({
+      users,
+      blocks: ((blocks ?? []) as BlockRow[]).map(toBlock),
+      notifications: ((notifs ?? []) as NotifRow[]).map(toNotif),
+    });
+    setLoading(false);
     setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (hydrated) localStorage.setItem(STATE_KEY, JSON.stringify(state));
-  }, [state, hydrated]);
+    const t = typeof window !== "undefined" ? (localStorage.getItem(THEME_KEY) as "dark" | "light" | null) : null;
+    if (t) setTheme(t);
+    void load();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") void load();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [load]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -204,90 +180,169 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (hydrated) localStorage.setItem(THEME_KEY, theme);
   }, [theme, hydrated]);
 
-  const setState = useCallback((fn: (s: AppState) => AppState) => setRaw(fn), []);
-
-  const login = useCallback(
-    (email: string) => {
-      const found = state.users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-      if (found) {
-        setUser(found);
-        localStorage.setItem(SESSION_KEY, JSON.stringify(found));
-      }
-      return found ?? null;
-    },
-    [state.users],
-  );
-
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem(SESSION_KEY);
+  const persistBlock = useCallback((b: Block) => {
+    const timers = saveTimers.current;
+    const existing = timers[b.id];
+    if (existing) clearTimeout(existing);
+    timers[b.id] = setTimeout(() => {
+      void supabase.from("blocks").update(fromBlock(b)).eq("id", b.id);
+    }, 400);
   }, []);
 
   const updateBlock = useCallback(
     (blockId: string, fn: (b: Block) => Block) =>
-      setRaw((s) => ({ ...s, blocks: s.blocks.map((b) => (b.id === blockId ? fn(b) : b)) })),
-    [],
+      setRaw((s) => {
+        let updated: Block | null = null;
+        const blocks = s.blocks.map((b) => {
+          if (b.id !== blockId) return b;
+          updated = fn(b);
+          return updated;
+        });
+        if (updated) persistBlock(updated);
+        return { ...s, blocks };
+      }),
+    [persistBlock],
   );
+
+  const createBlock = useCallback(async (b: Omit<Block, "id">) => {
+    const { data, error } = await supabase
+      .from("blocks")
+      .insert({
+        coach_id: b.coachId,
+        trainee_id: b.traineeId,
+        name: b.name,
+        total_weeks: b.totalWeeks,
+        workouts_per_week: b.workoutsPerWeek,
+        current_week: b.currentWeek,
+        weeks: b.weeks as unknown as Json,
+      })
+      .select("*")
+      .single();
+    if (error || !data) return null;
+    const created = toBlock(data as unknown as BlockRow);
+    setRaw((s) => ({ ...s, blocks: [...s.blocks, created] }));
+    return created.id;
+  }, []);
+
+  const deleteBlock = useCallback(async (blockId: string) => {
+    setRaw((s) => ({ ...s, blocks: s.blocks.filter((b) => b.id !== blockId) }));
+    await supabase.from("blocks").delete().eq("id", blockId);
+  }, []);
 
   const notify = useCallback(
-    (to: Role, text: string, toUserId?: number, fromUserId?: number) =>
-      setRaw((s) => ({
-        ...s,
-        notifications: [
-          { id: uid(), to, toUserId, fromUserId, text, createdAt: Date.now() },
-          ...s.notifications,
-        ],
-      })),
+    (to: Role, text: string, toUserId?: string, fromUserId?: string) => {
+      if (!toUserId || !fromUserId) return;
+      void (async () => {
+        const { data } = await supabase
+          .from("notifications")
+          .insert({ to_role: to, text, to_user_id: toUserId, from_user_id: fromUserId })
+          .select("*")
+          .single();
+        if (data) {
+          const n = toNotif(data as unknown as NotifRow);
+          setRaw((s) => ({ ...s, notifications: [n, ...s.notifications] }));
+        }
+      })();
+    },
     [],
   );
 
-  const markNotificationsRead = useCallback(
-    (userId: number) =>
-      setRaw((s) => ({
-        ...s,
-        notifications: s.notifications.map((n) =>
-          n.toUserId === userId && !n.read ? { ...n, read: true } : n,
-        ),
-      })),
-    [],
+  const markNotificationsRead = useCallback((userId: string) => {
+    setRaw((s) => ({
+      ...s,
+      notifications: s.notifications.map((n) =>
+        n.toUserId === userId && !n.read ? { ...n, read: true } : n,
+      ),
+    }));
+    void supabase.from("notifications").update({ read: true }).eq("to_user_id", userId).eq("read", false);
+  }, []);
+
+  const dismissNotification = useCallback((id: string) => {
+    setRaw((s) => ({
+      ...s,
+      notifications: s.notifications.map((n) => (n.id === id ? { ...n, dismissed: true } : n)),
+    }));
+    void supabase.from("notifications").update({ dismissed: true }).eq("id", id);
+  }, []);
+
+  const createInviteCode = useCallback(async () => {
+    if (!user) return null;
+    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const code = Array.from({ length: 6 }, () =>
+      alphabet[Math.floor(Math.random() * alphabet.length)],
+    ).join("");
+    const { error } = await supabase.from("invite_codes").insert({ code, coach_id: user.id });
+    return error ? null : code;
+  }, [user]);
+
+  const redeemInviteCode = useCallback(
+    async (code: string) => {
+      const { error } = await supabase.rpc("redeem_invite_code", { _code: code });
+      if (error) {
+        if (error.message.includes("own_code")) return { error: "זה הקוד שלך" };
+        return { error: "קוד לא תקין או שכבר נוצל" };
+      }
+      await load();
+      return {};
+    },
+    [load],
   );
 
-  const dismissNotification = useCallback(
-    (id: string) =>
-      setRaw((s) => ({
-        ...s,
-        notifications: s.notifications.map((n) => (n.id === id ? { ...n, dismissed: true } : n)),
-      })),
-    [],
+  const updateProfile = useCallback(
+    async (patch: { name?: string; role?: Role }) => {
+      if (!user) return;
+      const row: { name?: string; role?: Role } = {};
+      if (patch.name !== undefined) row.name = patch.name;
+      if (patch.role !== undefined) row.role = patch.role;
+      await supabase.from("profiles").update(row).eq("id", user.id);
+      await load();
+    },
+    [user, load],
   );
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setRaw(emptyState);
+  }, []);
 
   const value = useMemo(
     () => ({
       hydrated,
+      loading,
       state,
-      setState,
       user,
-      login,
+      refresh: load,
       logout,
       theme,
       toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
       updateBlock,
+      createBlock,
+      deleteBlock,
       notify,
       markNotificationsRead,
       dismissNotification,
+      createInviteCode,
+      redeemInviteCode,
+      updateProfile,
     }),
     [
       hydrated,
+      loading,
       state,
-      setState,
       user,
-      login,
+      load,
       logout,
       theme,
       updateBlock,
+      createBlock,
+      deleteBlock,
       notify,
       markNotificationsRead,
       dismissNotification,
+      createInviteCode,
+      redeemInviteCode,
+      updateProfile,
     ],
   );
 
