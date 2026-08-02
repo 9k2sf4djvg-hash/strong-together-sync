@@ -27,7 +27,7 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
   const mine = user ? state.notifications.filter((n) => n.toUserId === user.id) : [];
   const myNotifications = mine.filter((n) => !n.dismissed);
   const unreadCount = myNotifications.filter((n) => !n.read).length;
-  const senderName = (id?: number) => state.users.find((u) => u.id === id)?.name;
+  const senderName = (id?: string) => state.users.find((u) => u.id === id)?.name;
   const fmtDate = (t: number) =>
     new Date(t).toLocaleDateString("he-IL", {
       day: "2-digit",
@@ -137,8 +137,7 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
               size="icon"
               aria-label="התנתקות"
               onClick={() => {
-                logout();
-                navigate({ to: "/" });
+                void logout().then(() => navigate({ to: "/" }));
               }}
             >
               <LogOut className="size-5" />

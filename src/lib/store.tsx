@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { AppNotification, AppState, Block, Exercise, Role, User, WorkoutSet } from "./types";
 
 const THEME_KEY = "st_theme_v1";
@@ -68,7 +69,7 @@ const fromBlock = (b: Block) => ({
   workouts_per_week: b.workoutsPerWeek,
   current_week: b.currentWeek,
   completed_at: b.completedAt ?? null,
-  weeks: b.weeks as unknown,
+  weeks: b.weeks as unknown as Json,
 });
 
 type ProfileRow = { id: string; name: string; email: string; role: Role; coach_id: string | null };
@@ -213,7 +214,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         total_weeks: b.totalWeeks,
         workouts_per_week: b.workoutsPerWeek,
         current_week: b.currentWeek,
-        weeks: b.weeks as unknown,
+        weeks: b.weeks as unknown as Json,
       })
       .select("*")
       .single();
@@ -290,9 +291,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const updateProfile = useCallback(
     async (patch: { name?: string; role?: Role }) => {
       if (!user) return;
-      const row: Record<string, unknown> = {};
-      if (patch.name !== undefined) row["name"] = patch.name;
-      if (patch.role !== undefined) row["role"] = patch.role;
+      const row: { name?: string; role?: Role } = {};
+      if (patch.name !== undefined) row.name = patch.name;
+      if (patch.role !== undefined) row.role = patch.role;
       await supabase.from("profiles").update(row).eq("id", user.id);
       await load();
     },
