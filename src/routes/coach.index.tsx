@@ -68,7 +68,10 @@ function CoachHome() {
     setInviteOpen(true);
     setInviteCode("");
     const code = await createInviteCode();
-    if (!code) toast.error("יצירת הקוד נכשלה");
+    if (!code) {
+      toast.error("יצירת הקוד נכשלה");
+      return;
+    }
     setInviteCode(code);
   };
 
