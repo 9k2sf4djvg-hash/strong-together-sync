@@ -1,10 +1,11 @@
 export type Role = "coach" | "trainee";
 
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: Role;
+  coachId?: string | null;
 }
 
 export interface WorkoutSet {
@@ -54,8 +55,8 @@ export interface Week {
 
 export interface Block {
   id: string;
-  coachId: number;
-  traineeId: number;
+  coachId: string;
+  traineeId: string;
   name: string;
   totalWeeks: number;
   workoutsPerWeek: number;
@@ -67,8 +68,8 @@ export interface Block {
 export interface AppNotification {
   id: string;
   to: Role;
-  toUserId?: number | undefined;
-  fromUserId?: number | undefined;
+  toUserId?: string | undefined;
+  fromUserId?: string | undefined;
   text: string;
   createdAt: number;
   read?: boolean;
