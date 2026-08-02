@@ -460,6 +460,7 @@ function SetEditorRow({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  const [modeOverride, setModeOverride] = useState<Record<string, FieldMode | undefined>>({});
   return (
     <div className="rounded-xl border border-border p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -479,8 +480,11 @@ function SetEditorRow({
           const enabled = set[f.has];
           const min = set[f.min];
           const max = set[f.max];
-          const mode: FieldMode = !enabled ? "off" : min === max ? "single" : "range";
+          const derived: FieldMode = !enabled ? "off" : min === max ? "single" : "range";
+          const override = modeOverride[f.key];
+          const mode: FieldMode = !enabled ? "off" : (override && override !== "off" ? override : derived);
           const setMode = (m: FieldMode) => {
+            setModeOverride((prev) => ({ ...prev, [f.key]: m }));
             if (m === "off") {
               onPatch({ [f.has]: false } as Partial<WorkoutSet>);
             } else if (m === "single") {
