@@ -86,13 +86,13 @@ function LoginPage() {
     setBusy(true);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
-    if (error) return toast.error("אימייל או סיסמה שגויים");
+    if (error) toast.error("אימייל או סיסמה שגויים");
     toast.success("ברוך הבא!");
   };
 
   const signUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) return toast.error("סיסמה חייבת להכיל לפחות 6 תווים");
+    if (password.length < 6) toast.error("סיסמה חייבת להכיל לפחות 6 תווים");
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
@@ -103,7 +103,7 @@ function LoginPage() {
       },
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) toast.error(error.message);
     if (!data.session) toast.success("נשלח אליך מייל אימות — אשר אותו כדי להיכנס");
     else toast.success("החשבון נוצר!");
   };

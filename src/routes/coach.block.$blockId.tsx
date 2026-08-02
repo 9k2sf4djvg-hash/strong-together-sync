@@ -42,7 +42,7 @@ export const Route = createFileRoute("/coach/block/$blockId")({
 
 function BlockPage() {
   const { blockId } = Route.useParams();
-  const { state, setState, user, updateBlock, notify, hydrated } = useStore();
+  const { state, deleteBlock: removeBlock, user, updateBlock, notify, hydrated } = useStore();
   const navigate = useNavigate();
   const [editing, setEditing] = useState<{ week: number; workoutId: string } | null>(null);
   const [editBlockOpen, setEditBlockOpen] = useState(false);
@@ -181,7 +181,7 @@ function BlockPage() {
 
   const deleteBlock = () => {
     if (!window.confirm(`למחוק את הבלוק "${block.name}"? הפעולה אינה הפיכה.`)) return;
-    setState((s) => ({ ...s, blocks: s.blocks.filter((b) => b.id !== block.id) }));
+    void removeBlock(block.id);
     toast.success("הבלוק נמחק");
     navigate({ to: "/coach" });
   };
@@ -330,7 +330,7 @@ function BlockPage() {
       {editBlockOpen && (
         <BlockSettingsDialog
           block={block}
-          trainees={state.users.filter((u) => u.role === "trainee")}
+          trainees={state.users.filter((u) => u.role === "trainee" && u.coachId === user?.id)}
           onClose={() => setEditBlockOpen(false)}
           onSave={(patch) => {
             updateBlock(block.id, (b) => ({ ...b, ...patch }));
@@ -350,7 +350,7 @@ function BlockSettingsDialog({
   onSave,
 }: {
   block: Block;
-  trainees: { id: number; name: string }[];
+  trainees: { id: string; name: string }[];
   onClose: () => void;
   onSave: (patch: Partial<Block>) => void;
 }) {
@@ -377,7 +377,7 @@ function BlockSettingsDialog({
       totalWeeks: tw,
       workoutsPerWeek: pw,
       currentWeek: Math.min(cw, Math.max(block.weeks.length, 1)),
-      traineeId: Number(traineeId),
+      traineeId,
     });
   };
 
