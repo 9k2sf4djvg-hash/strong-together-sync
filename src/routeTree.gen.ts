@@ -15,6 +15,7 @@ import { Route as TraineeIndexRouteImport } from './routes/trainee.index'
 import { Route as CoachBlockBlockIdRouteImport } from './routes/coach.block.$blockId'
 import { Route as CoachStatsMetricRouteImport } from './routes/coach.stats.$metric'
 import { Route as TraineeWorkoutWorkoutIdRouteImport } from './routes/trainee.workout.$workoutId'
+import { Route as CoachStatsMetricIndexRouteImport } from './routes/coach.stats.$metric.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,22 +47,28 @@ const TraineeWorkoutWorkoutIdRoute = TraineeWorkoutWorkoutIdRouteImport.update({
   path: '/trainee/workout/$workoutId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CoachStatsMetricIndexRoute = CoachStatsMetricIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CoachStatsMetricRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/coach/': typeof CoachIndexRoute
   '/trainee/': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
-  '/coach/stats/$metric': typeof CoachStatsMetricRoute
+  '/coach/stats/$metric': typeof CoachStatsMetricRouteWithChildren
   '/trainee/workout/$workoutId': typeof TraineeWorkoutWorkoutIdRoute
+  '/coach/stats/$metric/': typeof CoachStatsMetricIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/coach': typeof CoachIndexRoute
   '/trainee': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
-  '/coach/stats/$metric': typeof CoachStatsMetricRoute
   '/trainee/workout/$workoutId': typeof TraineeWorkoutWorkoutIdRoute
+  '/coach/stats/$metric': typeof CoachStatsMetricIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -69,8 +76,9 @@ export interface FileRoutesById {
   '/coach/': typeof CoachIndexRoute
   '/trainee/': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
-  '/coach/stats/$metric': typeof CoachStatsMetricRoute
+  '/coach/stats/$metric': typeof CoachStatsMetricRouteWithChildren
   '/trainee/workout/$workoutId': typeof TraineeWorkoutWorkoutIdRoute
+  '/coach/stats/$metric/': typeof CoachStatsMetricIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,14 +89,15 @@ export interface FileRouteTypes {
     | '/coach/block/$blockId'
     | '/coach/stats/$metric'
     | '/trainee/workout/$workoutId'
+    | '/coach/stats/$metric/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/coach'
     | '/trainee'
     | '/coach/block/$blockId'
-    | '/coach/stats/$metric'
     | '/trainee/workout/$workoutId'
+    | '/coach/stats/$metric'
   id:
     | '__root__'
     | '/'
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/coach/block/$blockId'
     | '/coach/stats/$metric'
     | '/trainee/workout/$workoutId'
+    | '/coach/stats/$metric/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -104,7 +114,7 @@ export interface RootRouteChildren {
   CoachIndexRoute: typeof CoachIndexRoute
   TraineeIndexRoute: typeof TraineeIndexRoute
   CoachBlockBlockIdRoute: typeof CoachBlockBlockIdRoute
-  CoachStatsMetricRoute: typeof CoachStatsMetricRoute
+  CoachStatsMetricRoute: typeof CoachStatsMetricRouteWithChildren
   TraineeWorkoutWorkoutIdRoute: typeof TraineeWorkoutWorkoutIdRoute
 }
 
@@ -152,15 +162,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TraineeWorkoutWorkoutIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coach/stats/$metric/': {
+      id: '/coach/stats/$metric/'
+      path: '/'
+      fullPath: '/coach/stats/$metric/'
+      preLoaderRoute: typeof CoachStatsMetricIndexRouteImport
+      parentRoute: typeof CoachStatsMetricRoute
+    }
   }
 }
+
+interface CoachStatsMetricRouteChildren {
+  CoachStatsMetricIndexRoute: typeof CoachStatsMetricIndexRoute
+}
+
+const CoachStatsMetricRouteChildren: CoachStatsMetricRouteChildren = {
+  CoachStatsMetricIndexRoute: CoachStatsMetricIndexRoute,
+}
+
+const CoachStatsMetricRouteWithChildren =
+  CoachStatsMetricRoute._addFileChildren(CoachStatsMetricRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CoachIndexRoute: CoachIndexRoute,
   TraineeIndexRoute: TraineeIndexRoute,
   CoachBlockBlockIdRoute: CoachBlockBlockIdRoute,
-  CoachStatsMetricRoute: CoachStatsMetricRoute,
+  CoachStatsMetricRoute: CoachStatsMetricRouteWithChildren,
   TraineeWorkoutWorkoutIdRoute: TraineeWorkoutWorkoutIdRoute,
 }
 export const routeTree = rootRouteImport
