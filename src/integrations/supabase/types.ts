@@ -14,16 +14,198 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      blocks: {
+        Row: {
+          coach_id: string
+          completed_at: number | null
+          created_at: string
+          current_week: number
+          id: string
+          name: string
+          total_weeks: number
+          trainee_id: string
+          updated_at: string
+          weeks: Json
+          workouts_per_week: number
+        }
+        Insert: {
+          coach_id: string
+          completed_at?: number | null
+          created_at?: string
+          current_week?: number
+          id?: string
+          name?: string
+          total_weeks?: number
+          trainee_id: string
+          updated_at?: string
+          weeks?: Json
+          workouts_per_week?: number
+        }
+        Update: {
+          coach_id?: string
+          completed_at?: number | null
+          created_at?: string
+          current_week?: number
+          id?: string
+          name?: string
+          total_weeks?: number
+          trainee_id?: string
+          updated_at?: string
+          weeks?: Json
+          workouts_per_week?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocks_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocks_trainee_id_fkey"
+            columns: ["trainee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invite_codes: {
+        Row: {
+          coach_id: string
+          code: string
+          created_at: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          coach_id: string
+          code: string
+          created_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          coach_id?: string
+          code?: string
+          created_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_codes_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_codes_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          dismissed: boolean
+          from_user_id: string | null
+          id: string
+          read: boolean
+          text: string
+          to_role: Database["public"]["Enums"]["app_role"]
+          to_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dismissed?: boolean
+          from_user_id?: string | null
+          id?: string
+          read?: boolean
+          text: string
+          to_role?: Database["public"]["Enums"]["app_role"]
+          to_user_id: string
+        }
+        Update: {
+          created_at?: string
+          dismissed?: boolean
+          from_user_id?: string | null
+          id?: string
+          read?: boolean
+          text?: string
+          to_role?: Database["public"]["Enums"]["app_role"]
+          to_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          coach_id: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string
+          email?: string
+          id: string
+          name?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      my_coach_id: { Args: never; Returns: string }
+      redeem_invite_code: { Args: { _code: string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "coach" | "trainee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +332,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["coach", "trainee"],
+    },
   },
 } as const
