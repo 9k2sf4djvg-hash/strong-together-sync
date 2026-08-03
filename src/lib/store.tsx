@@ -2,7 +2,17 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { AppNotification, AppState, Block, Exercise, Role, User, WorkoutSet } from "./types";
+import type {
+  AppNotification,
+  AppState,
+  Block,
+  CoachApplication,
+  CoachStatus,
+  Exercise,
+  Role,
+  User,
+  WorkoutSet,
+} from "./types";
 
 const THEME_KEY = "st_theme_v1";
 
@@ -102,6 +112,40 @@ const toNotif = (n: NotifRow): AppNotification => ({
   dismissed: n.dismissed,
 });
 
+type CoachAppRow = {
+  id: string;
+  user_id: string;
+  full_name: string;
+  email: string;
+  specialty: string;
+  years_experience: number;
+  bio: string;
+  credential_path: string | null;
+  applicant_notes: string;
+  status: CoachStatus;
+  admin_notes: string;
+  rejection_reason: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+};
+
+export const toCoachApp = (r: CoachAppRow): CoachApplication => ({
+  id: r.id,
+  userId: r.user_id,
+  fullName: r.full_name,
+  email: r.email,
+  specialty: r.specialty,
+  yearsExperience: r.years_experience,
+  bio: r.bio,
+  credentialPath: r.credential_path,
+  applicantNotes: r.applicant_notes,
+  status: r.status,
+  adminNotes: r.admin_notes,
+  rejectionReason: r.rejection_reason,
+  reviewedAt: r.reviewed_at,
+  createdAt: r.created_at,
+});
+
 /* ---------- context ---------- */
 
 interface Ctx {
@@ -109,6 +153,8 @@ interface Ctx {
   loading: boolean;
   state: AppState;
   user: User | null;
+  isAdmin: boolean;
+  coachApp: CoachApplication | null;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
   theme: "dark" | "light";
