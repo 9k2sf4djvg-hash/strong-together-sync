@@ -1,0 +1,10 @@
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.update_updated_at_column() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.is_approved_coach(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.has_system_role(uuid, public.system_role) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.my_coach_id() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.redeem_invite_code(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_approved_coach(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.has_system_role(uuid, public.system_role) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.my_coach_id() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.redeem_invite_code(text) TO authenticated;
