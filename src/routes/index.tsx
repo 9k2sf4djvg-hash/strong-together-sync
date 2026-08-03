@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Dumbbell, Loader2 } from "lucide-react";
@@ -52,7 +52,7 @@ function GoogleIcon() {
 }
 
 function LoginPage() {
-  const { user, hydrated, loading } = useStore();
+  const { user, hydrated, loading, coachApp } = useStore();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -62,10 +62,11 @@ function LoginPage() {
 
   useEffect(() => {
     if (!hydrated || loading || !user) return;
-    if (user.role === "coach") navigate({ to: "/coach" });
+    if (user.role === "coach")
+      navigate({ to: coachApp?.status === "approved" ? "/coach" : "/coach/apply" });
     else if (!user.coachId) navigate({ to: "/connect" });
     else navigate({ to: "/trainee" });
-  }, [hydrated, loading, user, navigate]);
+  }, [hydrated, loading, user, coachApp, navigate]);
 
   const oauth = async (provider: "google" | "apple") => {
     setBusy(true);
@@ -216,6 +217,12 @@ function LoginPage() {
 
         <p className="animate-fade-up text-center text-xs text-muted-foreground">
           מתאמן חדש? לאחר ההתחברות תתבקש להזין את קוד ההזמנה שקיבלת מהמאמן.
+          <br />
+          מאמן חדש? לאחר ההרשמה תעבור תהליך אימות קצר ואישור מנהל.
+          <br />
+          <Link to="/admin" className="text-primary hover:underline">
+            כניסת מנהל מערכת
+          </Link>
         </p>
       </main>
     </div>
