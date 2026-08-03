@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_logs: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          id: string
+          notes: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          notes?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          notes?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       blocks: {
         Row: {
           coach_id: string
@@ -70,6 +97,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      coach_applications: {
+        Row: {
+          admin_notes: string
+          applicant_notes: string
+          bio: string
+          created_at: string
+          credential_path: string | null
+          email: string
+          full_name: string
+          id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          specialty: string
+          status: Database["public"]["Enums"]["coach_status"]
+          updated_at: string
+          user_id: string
+          years_experience: number
+        }
+        Insert: {
+          admin_notes?: string
+          applicant_notes?: string
+          bio?: string
+          created_at?: string
+          credential_path?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          specialty?: string
+          status?: Database["public"]["Enums"]["coach_status"]
+          updated_at?: string
+          user_id: string
+          years_experience?: number
+        }
+        Update: {
+          admin_notes?: string
+          applicant_notes?: string
+          bio?: string
+          created_at?: string
+          credential_path?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          specialty?: string
+          status?: Database["public"]["Enums"]["coach_status"]
+          updated_at?: string
+          user_id?: string
+          years_experience?: number
+        }
+        Relationships: []
       }
       invite_codes: {
         Row: {
@@ -196,16 +280,47 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["system_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["system_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["system_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_system_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["system_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_approved_coach: { Args: { _user_id: string }; Returns: boolean }
       my_coach_id: { Args: never; Returns: string }
       redeem_invite_code: { Args: { _code: string }; Returns: string }
     }
     Enums: {
       app_role: "coach" | "trainee"
+      coach_status: "pending" | "approved" | "rejected" | "blocked"
+      system_role: "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -334,6 +449,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["coach", "trainee"],
+      coach_status: ["pending", "approved", "rejected", "blocked"],
+      system_role: ["admin"],
     },
   },
 } as const
