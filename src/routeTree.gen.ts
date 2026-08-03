@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as CoachIndexRouteImport } from './routes/coach.index'
+import { Route as CoachApplyRouteImport } from './routes/coach.apply'
 import { Route as TraineeIndexRouteImport } from './routes/trainee.index'
 import { Route as CoachBlockBlockIdRouteImport } from './routes/coach.block.$blockId'
 import { Route as CoachStatsMetricRouteImport } from './routes/coach.stats.$metric'
@@ -32,6 +33,11 @@ const ConnectRoute = ConnectRouteImport.update({
 const CoachIndexRoute = CoachIndexRouteImport.update({
   id: '/coach/',
   path: '/coach/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoachApplyRoute = CoachApplyRouteImport.update({
+  id: '/coach/apply',
+  path: '/coach/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TraineeIndexRoute = TraineeIndexRouteImport.update({
@@ -68,6 +74,7 @@ const CoachStatsMetricItemIdRoute = CoachStatsMetricItemIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/connect': typeof ConnectRoute
+  '/coach/apply': typeof CoachApplyRoute
   '/coach/': typeof CoachIndexRoute
   '/trainee/': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/connect': typeof ConnectRoute
+  '/coach/apply': typeof CoachApplyRoute
   '/coach': typeof CoachIndexRoute
   '/trainee': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
@@ -90,6 +98,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/connect': typeof ConnectRoute
+  '/coach/apply': typeof CoachApplyRoute
   '/coach/': typeof CoachIndexRoute
   '/trainee/': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/connect'
+    | '/coach/apply'
     | '/coach/'
     | '/trainee/'
     | '/coach/block/$blockId'
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/connect'
+    | '/coach/apply'
     | '/coach'
     | '/trainee'
     | '/coach/block/$blockId'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/connect'
+    | '/coach/apply'
     | '/coach/'
     | '/trainee/'
     | '/coach/block/$blockId'
@@ -136,6 +148,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConnectRoute: typeof ConnectRoute
+  CoachApplyRoute: typeof CoachApplyRoute
   CoachIndexRoute: typeof CoachIndexRoute
   TraineeIndexRoute: typeof TraineeIndexRoute
   CoachBlockBlockIdRoute: typeof CoachBlockBlockIdRoute
@@ -164,6 +177,13 @@ declare module '@tanstack/react-router' {
       path: '/coach'
       fullPath: '/coach/'
       preLoaderRoute: typeof CoachIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coach/apply': {
+      id: '/coach/apply'
+      path: '/coach/apply'
+      fullPath: '/coach/apply'
+      preLoaderRoute: typeof CoachApplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trainee/': {
@@ -227,6 +247,7 @@ const CoachStatsMetricRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConnectRoute: ConnectRoute,
+  CoachApplyRoute: CoachApplyRoute,
   CoachIndexRoute: CoachIndexRoute,
   TraineeIndexRoute: TraineeIndexRoute,
   CoachBlockBlockIdRoute: CoachBlockBlockIdRoute,
