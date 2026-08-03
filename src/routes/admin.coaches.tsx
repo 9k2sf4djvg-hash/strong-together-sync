@@ -161,7 +161,9 @@ function AdminCoaches() {
         </Tabs>
 
         <div className="mt-4 space-y-3">
-          {list.length === 0 && <EmptyState title="אין בקשות" description="לא נמצאו מאמנים בסטטוס זה." />}
+          {list.length === 0 && (
+            <EmptyState icon={UserCheck} title="אין בקשות" description="לא נמצאו מאמנים בסטטוס זה." />
+          )}
           {list.map((app) => (
             <article key={app.id} className="glass-card animate-fade-up space-y-3 rounded-2xl p-4">
               <header className="flex flex-wrap items-center justify-between gap-2">
