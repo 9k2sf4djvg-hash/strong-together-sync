@@ -2,7 +2,17 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { AppNotification, AppState, Block, Exercise, Role, User, WorkoutSet } from "./types";
+import type {
+  AppNotification,
+  AppState,
+  Block,
+  CoachApplication,
+  CoachStatus,
+  Exercise,
+  Role,
+  User,
+  WorkoutSet,
+} from "./types";
 
 const THEME_KEY = "st_theme_v1";
 
@@ -102,6 +112,40 @@ const toNotif = (n: NotifRow): AppNotification => ({
   dismissed: n.dismissed,
 });
 
+type CoachAppRow = {
+  id: string;
+  user_id: string;
+  full_name: string;
+  email: string;
+  specialty: string;
+  years_experience: number;
+  bio: string;
+  credential_path: string | null;
+  applicant_notes: string;
+  status: CoachStatus;
+  admin_notes: string;
+  rejection_reason: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+};
+
+export const toCoachApp = (r: CoachAppRow): CoachApplication => ({
+  id: r.id,
+  userId: r.user_id,
+  fullName: r.full_name,
+  email: r.email,
+  specialty: r.specialty,
+  yearsExperience: r.years_experience,
+  bio: r.bio,
+  credentialPath: r.credential_path,
+  applicantNotes: r.applicant_notes,
+  status: r.status,
+  adminNotes: r.admin_notes,
+  rejectionReason: r.rejection_reason,
+  reviewedAt: r.reviewed_at,
+  createdAt: r.created_at,
+});
+
 /* ---------- context ---------- */
 
 interface Ctx {
@@ -109,6 +153,8 @@ interface Ctx {
   loading: boolean;
   state: AppState;
   user: User | null;
+  isAdmin: boolean;
+  coachApp: CoachApplication | null;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
   theme: "dark" | "light";
@@ -130,6 +176,8 @@ const StoreContext = createContext<Ctx | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setRaw] = useState<AppState>(emptyState);
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [coachApp, setCoachApp] = useState<CoachApplication | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [hydrated, setHydrated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -140,20 +188,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const authUser = auth.user;
     if (!authUser) {
       setUser(null);
+      setIsAdmin(false);
+      setCoachApp(null);
       setRaw(emptyState);
       setLoading(false);
       setHydrated(true);
       return;
     }
 
-    const [{ data: profiles }, { data: blocks }, { data: notifs }] = await Promise.all([
+    const [{ data: profiles }, { data: blocks }, { data: notifs }, { data: roles }, { data: app }] =
+      await Promise.all([
       supabase.from("profiles").select("id,name,email,role,coach_id"),
       supabase.from("blocks").select("*"),
       supabase.from("notifications").select("*").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("role").eq("user_id", authUser.id),
+      supabase.from("coach_applications").select("*").eq("user_id", authUser.id).maybeSingle(),
     ]);
 
     const users = ((profiles ?? []) as ProfileRow[]).map(toUser);
     setUser(users.find((u) => u.id === authUser.id) ?? null);
+    setIsAdmin(((roles ?? []) as { role: string }[]).some((r) => r.role === "admin"));
+    setCoachApp(app ? toCoachApp(app as unknown as CoachAppRow) : null);
     setRaw({
       users,
       blocks: ((blocks ?? []) as BlockRow[]).map(toBlock),
@@ -303,6 +358,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setIsAdmin(false);
+    setCoachApp(null);
     setRaw(emptyState);
   }, []);
 
@@ -312,6 +369,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       loading,
       state,
       user,
+      isAdmin,
+      coachApp,
       refresh: load,
       logout,
       theme,
@@ -331,6 +390,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       loading,
       state,
       user,
+      isAdmin,
+      coachApp,
       load,
       logout,
       theme,

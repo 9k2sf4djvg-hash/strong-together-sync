@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Activity, CheckCircle2, Copy, Plus, User, UserPlus, Users, Layers } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Activity, CheckCircle2, Copy, Plus, Trash2, User, UserPlus, Users, Layers } from "lucide-react";
 import { useStore, uid } from "@/lib/store";
+import { coachRemoveTrainee } from "@/lib/admin.functions";
 import { AppHeader } from "@/components/AppHeader";
 import { EmptyState, ProgressBar, StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
@@ -16,8 +18,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Week } from "@/lib/types";
+import type { User as AppUser, Week } from "@/lib/types";
 
 export const Route = createFileRoute("/coach/")({
   head: () => ({
@@ -32,8 +44,10 @@ export const Route = createFileRoute("/coach/")({
 });
 
 function CoachHome() {
-  const { state, createBlock, user, hydrated, createInviteCode } = useStore();
+  const { state, createBlock, user, hydrated, createInviteCode, coachApp, refresh } = useStore();
   const navigate = useNavigate();
+  const removeTrainee = useServerFn(coachRemoveTrainee);
+  const [toRemove, setToRemove] = useState<AppUser | null>(null);
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
@@ -48,9 +62,22 @@ function CoachHome() {
     if (!hydrated) return;
     if (!user) navigate({ to: "/" });
     else if (user.role !== "coach") navigate({ to: "/trainee" });
-  }, [hydrated, user, navigate]);
+    else if (coachApp?.status !== "approved") navigate({ to: "/coach/apply" });
+  }, [hydrated, user, coachApp, navigate]);
 
-  if (!user || user.role !== "coach") return null;
+  if (!user || user.role !== "coach" || coachApp?.status !== "approved") return null;
+
+  const confirmRemove = async () => {
+    if (!toRemove) return;
+    try {
+      await removeTrainee({ data: { userId: toRemove.id } });
+      await refresh();
+      toast.success("המתאמן הוסר");
+    } catch {
+      toast.error("ההסרה נכשלה");
+    }
+    setToRemove(null);
+  };
 
   const trainees = state.users.filter((u) => u.role === "trainee" && u.coachId === user.id);
 
@@ -239,7 +266,27 @@ function CoachHome() {
           />
         </div>
 
-        <h2 className="mb-3 text-lg font-bold">המתאמנים שלי</h2>
+        <h2 className="mb-3 text-lg font-bold">ניהול מתאמנים</h2>
+        <div className="mb-6 grid gap-2 sm:grid-cols-2">
+          {trainees.map((t) => (
+            <div key={t.id} className="glass-card flex items-center justify-between gap-3 rounded-2xl p-3">
+              <div className="min-w-0">
+                <p className="truncate font-semibold">{t.name}</p>
+                <p dir="ltr" className="truncate text-right text-xs text-muted-foreground">
+                  {t.email}
+                </p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => setToRemove(t)}>
+                <Trash2 className="size-4" /> הסרה
+              </Button>
+            </div>
+          ))}
+          {trainees.length === 0 && (
+            <p className="text-sm text-muted-foreground">אין מתאמנים מחוברים. שלח קוד הזמנה כדי להוסיף.</p>
+          )}
+        </div>
+
+        <h2 className="mb-3 text-lg font-bold">הבלוקים שלי</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {state.blocks.map((b) => {
             const trainee = state.users.find((u) => u.id === b.traineeId);
@@ -280,6 +327,21 @@ function CoachHome() {
           )}
         </div>
       </main>
+
+      <AlertDialog open={!!toRemove} onOpenChange={(o) => !o && setToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>להסיר את {toRemove?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              המתאמן ינותק ממך וכל בלוקי האימונים שיצרת עבורו יימחקו לצמיתות.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmRemove()}>הסרה</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

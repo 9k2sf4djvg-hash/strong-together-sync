@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 
 export function AppHeader({ subtitle }: { subtitle?: string }) {
-  const { user, logout, theme, toggleTheme, state, markNotificationsRead, dismissNotification } =
+  const { user, logout, theme, toggleTheme, state, isAdmin, markNotificationsRead, dismissNotification } =
     useStore();
   const navigate = useNavigate();
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -53,6 +53,14 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
           </span>
         </Link>
         <div className="flex shrink-0 items-center gap-1">
+          {isAdmin ? (
+            <Link
+              to="/admin"
+              className="rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
+            >
+              פאנל ניהול
+            </Link>
+          ) : null}
           <DropdownMenu
             onOpenChange={(o) => {
               if (o && user) markNotificationsRead(user.id);

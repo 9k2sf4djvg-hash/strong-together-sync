@@ -1,5 +1,33 @@
 export type Role = "coach" | "trainee";
 
+export type CoachStatus = "pending" | "approved" | "rejected" | "blocked";
+
+export interface CoachApplication {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  specialty: string;
+  yearsExperience: number;
+  bio: string;
+  credentialPath: string | null;
+  applicantNotes: string;
+  status: CoachStatus;
+  adminNotes: string;
+  rejectionReason: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+}
+
+export const COACH_SPECIALTIES = [
+  "כוח ופאוורליפטינג",
+  "בניית שריר",
+  "כושר גופני כללי",
+  "אתלטיקה וספורט תחרותי",
+  "שיקום ופציעות",
+  "אימון נשים",
+] as const;
+
 export interface User {
   id: string;
   name: string;
