@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ConnectRouteImport } from './routes/connect'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as CoachIndexRouteImport } from './routes/coach.index'
 import { Route as CoachApplyRouteImport } from './routes/coach.apply'
 import { Route as TraineeIndexRouteImport } from './routes/trainee.index'
@@ -28,6 +29,11 @@ const IndexRoute = IndexRouteImport.update({
 const ConnectRoute = ConnectRouteImport.update({
   id: '/connect',
   path: '/connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CoachIndexRoute = CoachIndexRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/connect': typeof ConnectRoute
   '/coach/apply': typeof CoachApplyRoute
+  '/admin/': typeof AdminIndexRoute
   '/coach/': typeof CoachIndexRoute
   '/trainee/': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/connect': typeof ConnectRoute
   '/coach/apply': typeof CoachApplyRoute
+  '/admin': typeof AdminIndexRoute
   '/coach': typeof CoachIndexRoute
   '/trainee': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/connect': typeof ConnectRoute
   '/coach/apply': typeof CoachApplyRoute
+  '/admin/': typeof AdminIndexRoute
   '/coach/': typeof CoachIndexRoute
   '/trainee/': typeof TraineeIndexRoute
   '/coach/block/$blockId': typeof CoachBlockBlockIdRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/'
     | '/connect'
     | '/coach/apply'
+    | '/admin/'
     | '/coach/'
     | '/trainee/'
     | '/coach/block/$blockId'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/'
     | '/connect'
     | '/coach/apply'
+    | '/admin'
     | '/coach'
     | '/trainee'
     | '/coach/block/$blockId'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/'
     | '/connect'
     | '/coach/apply'
+    | '/admin/'
     | '/coach/'
     | '/trainee/'
     | '/coach/block/$blockId'
@@ -149,6 +161,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConnectRoute: typeof ConnectRoute
   CoachApplyRoute: typeof CoachApplyRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   CoachIndexRoute: typeof CoachIndexRoute
   TraineeIndexRoute: typeof TraineeIndexRoute
   CoachBlockBlockIdRoute: typeof CoachBlockBlockIdRoute
@@ -170,6 +183,13 @@ declare module '@tanstack/react-router' {
       path: '/connect'
       fullPath: '/connect'
       preLoaderRoute: typeof ConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/coach/': {
@@ -248,6 +268,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConnectRoute: ConnectRoute,
   CoachApplyRoute: CoachApplyRoute,
+  AdminIndexRoute: AdminIndexRoute,
   CoachIndexRoute: CoachIndexRoute,
   TraineeIndexRoute: TraineeIndexRoute,
   CoachBlockBlockIdRoute: CoachBlockBlockIdRoute,
