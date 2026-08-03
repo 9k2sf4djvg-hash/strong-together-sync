@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Activity, CheckCircle2, Copy, Plus, User, UserPlus, Users, Layers } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Activity, CheckCircle2, Copy, Plus, Trash2, User, UserPlus, Users, Layers } from "lucide-react";
 import { useStore, uid } from "@/lib/store";
+import { coachRemoveTrainee } from "@/lib/admin.functions";
 import { AppHeader } from "@/components/AppHeader";
 import { EmptyState, ProgressBar, StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
@@ -16,8 +18,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Week } from "@/lib/types";
+import type { User as AppUser, Week } from "@/lib/types";
 
 export const Route = createFileRoute("/coach/")({
   head: () => ({
@@ -32,8 +44,10 @@ export const Route = createFileRoute("/coach/")({
 });
 
 function CoachHome() {
-  const { state, createBlock, user, hydrated, createInviteCode } = useStore();
+  const { state, createBlock, user, hydrated, createInviteCode, coachApp, refresh } = useStore();
   const navigate = useNavigate();
+  const removeTrainee = useServerFn(coachRemoveTrainee);
+  const [toRemove, setToRemove] = useState<AppUser | null>(null);
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
@@ -48,9 +62,22 @@ function CoachHome() {
     if (!hydrated) return;
     if (!user) navigate({ to: "/" });
     else if (user.role !== "coach") navigate({ to: "/trainee" });
-  }, [hydrated, user, navigate]);
+    else if (coachApp?.status !== "approved") navigate({ to: "/coach/apply" });
+  }, [hydrated, user, coachApp, navigate]);
 
-  if (!user || user.role !== "coach") return null;
+  if (!user || user.role !== "coach" || coachApp?.status !== "approved") return null;
+
+  const confirmRemove = async () => {
+    if (!toRemove) return;
+    try {
+      await removeTrainee({ data: { userId: toRemove.id } });
+      await refresh();
+      toast.success("המתאמן הוסר");
+    } catch {
+      toast.error("ההסרה נכשלה");
+    }
+    setToRemove(null);
+  };
 
   const trainees = state.users.filter((u) => u.role === "trainee" && u.coachId === user.id);
 
