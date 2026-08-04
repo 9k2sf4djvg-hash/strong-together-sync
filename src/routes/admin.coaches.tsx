@@ -129,9 +129,17 @@ function AdminCoaches() {
     if (!toDelete) return;
     setBusyId(toDelete.id);
     try {
-      await removeUser({ data: { userId: toDelete.userId } });
-      toast.success("החשבון נמחק");
-      await loadApps();
+      const res = await removeUser({ data: { userId: toDelete.userId } });
+      if (!res.ok) {
+        toast.error(
+          res.error === "cannot_delete_self"
+            ? "לא ניתן למחוק את חשבון המנהל שלך"
+            : "המחיקה נכשלה",
+        );
+      } else {
+        toast.success("החשבון נמחק");
+        await loadApps();
+      }
     } catch {
       toast.error("המחיקה נכשלה");
     }

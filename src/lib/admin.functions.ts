@@ -32,7 +32,9 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Forbidden");
-    if (data.userId === context.userId) throw new Error("cannot_delete_self");
+    if (data.userId === context.userId) {
+      return { ok: false as const, error: "cannot_delete_self" as const };
+    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("blocks").delete().or(`coach_id.eq.${data.userId},trainee_id.eq.${data.userId}`);
