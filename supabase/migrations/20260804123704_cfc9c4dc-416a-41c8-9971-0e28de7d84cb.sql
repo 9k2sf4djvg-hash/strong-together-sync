@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.is_approved_coach(uuid) FROM PUBLIC, anon, authenticated;
