@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Dumbbell, Loader2 } from "lucide-react";
+import { Dumbbell, Loader2, PlayCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { startDemo } from "@/lib/demo.functions";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +60,7 @@ function LoginPage() {
   const [name, setName] = useState("");
   const [role, setRole] = useState<"coach" | "trainee">("trainee");
   const [busy, setBusy] = useState(false);
+  const [demoBusy, setDemoBusy] = useState<"coach" | "trainee" | null>(null);
 
   useEffect(() => {
     if (!hydrated || loading || !user) return;
@@ -69,6 +71,34 @@ function LoginPage() {
   }, [hydrated, loading, user, coachApp, navigate]);
 
   const oauth = async (provider: "google" | "apple") => {
+    setBusy(true);
+    const result = await lovable.auth.signInWithOAuth(provider, {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setBusy(false);
+      toast.error("ההתחברות נכשלה, נסה שוב");
+      return;
+    }
+    if (result.redirected) return;
+    setBusy(false);
+  };
+
+  const enterDemo = async (demoRole: "coach" | "trainee") => {
+    setDemoBusy(demoRole);
+    try {
+      const creds = await startDemo({ data: { role: demoRole } });
+      const { error } = await supabase.auth.signInWithPassword(creds);
+      if (error) throw error;
+      toast.success(demoRole === "coach" ? "נכנסת כמאמן דמו" : "נכנסת כמתאמן דמו");
+    } catch {
+      toast.error("כניסת הדמו נכשלה, נסה שוב");
+    } finally {
+      setDemoBusy(null);
+    }
+  };
+
+  const unusedOauth = async (provider: "google" | "apple") => {
     setBusy(true);
     const result = await lovable.auth.signInWithOAuth(provider, {
       redirect_uri: window.location.origin,
