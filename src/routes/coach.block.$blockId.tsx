@@ -862,7 +862,8 @@ function WorkoutEditorInner({
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               className="sm:flex-1"
-              placeholder="שם התרגיל"
+              list="exercise-library"
+              placeholder="שם התרגיל — בחר מהרשימה או כתוב חופשי"
               value={newExercise}
               onChange={(e) => setNewExercise(e.target.value)}
               onKeyDown={(e) => {
@@ -886,6 +887,11 @@ function WorkoutEditorInner({
             >
               <Plus className="size-4" /> הוסף תרגיל
             </Button>
+            <datalist id="exercise-library">
+              {EXERCISE_LIBRARY.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
           </div>
         </div>
 
