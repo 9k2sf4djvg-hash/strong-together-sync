@@ -30,7 +30,15 @@ function TraineeHome() {
 
   if (!user || user.role !== "trainee") return null;
 
-  const block = state.blocks.find((b) => b.traineeId === user.id);
+  const myBlocks = state.blocks.filter((b) => b.traineeId === user.id);
+  const activeBlocks = myBlocks.filter((b) => !b.completedAt);
+  const hasPublishedWeek = (b: (typeof myBlocks)[number]) =>
+    b.weeks.some((w) => w.weekNumber === b.currentWeek && w.published);
+  const block =
+    activeBlocks.find(hasPublishedWeek) ??
+    activeBlocks[activeBlocks.length - 1] ??
+    myBlocks.find(hasPublishedWeek) ??
+    myBlocks[myBlocks.length - 1];
   const week = block?.weeks.find((w) => w.weekNumber === block.currentWeek && w.published);
   const workouts = week?.workouts ?? [];
   const done = workouts.filter((w) => w.completedAt).length;
