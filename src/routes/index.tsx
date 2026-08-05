@@ -98,20 +98,6 @@ function LoginPage() {
     }
   };
 
-  const unusedOauth = async (provider: "google" | "apple") => {
-    setBusy(true);
-    const result = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      setBusy(false);
-      toast.error("ההתחברות נכשלה, נסה שוב");
-      return;
-    }
-    if (result.redirected) return;
-    setBusy(false);
-  };
-
   const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
