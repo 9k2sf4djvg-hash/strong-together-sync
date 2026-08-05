@@ -216,14 +216,22 @@ function PerformWorkout() {
                                 {targetText(s, f.key)}
                               </span>
                             </p>
-                            {f.enabled && (
+                            {(f.enabled || f.key === "rpe") && (
                               <div className="space-y-1">
-                                <Label className="text-xs">{f.label} בפועל</Label>
+                                <Label className="text-xs">
+                                  {f.label} בפועל{!f.enabled && " (אופציונלי)"}
+                                </Label>
                                 <Input
                                   type="number"
                                   inputMode="decimal"
                                   disabled={!editable}
-                                  className={`font-mono ${f.value == null ? "border-destructive" : "border-accent text-accent"}`}
+                                  className={`font-mono ${
+                                    f.value != null
+                                      ? "border-accent text-accent"
+                                      : f.enabled
+                                        ? "border-destructive"
+                                        : ""
+                                  }`}
                                   value={f.value ?? ""}
                                   onChange={(e) =>
                                     setSetField(ex.id, s.id, {
