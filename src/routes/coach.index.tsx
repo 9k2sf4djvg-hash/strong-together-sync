@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity, CheckCircle2, Copy, Plus, Trash2, User, UserPlus, Users, Layers } from "lucide-react";
 import { useStore, uid } from "@/lib/store";
+import { cloneWeek } from "@/lib/clone";
 import { coachRemoveTrainee } from "@/lib/admin.functions";
 import { AppHeader } from "@/components/AppHeader";
 import { EmptyState, ProgressBar, StatCard } from "@/components/StatCard";
@@ -55,6 +56,7 @@ function CoachHome() {
   const [weeks, setWeeks] = useState("4");
   const [perWeek, setPerWeek] = useState("3");
   const [traineeId, setTraineeId] = useState("");
+  const [sourceBlockId, setSourceBlockId] = useState("none");
   const goStat = (metric: "trainees" | "blocks" | "workouts" | "completion") =>
     navigate({ to: "/coach/stats/$metric", params: { metric } });
 
@@ -109,7 +111,11 @@ function CoachHome() {
       toast.error("יש למלא שם בלוק, מתאמן, מספר שבועות ואימונים בשבוע");
       return;
     }
-    const week: Week = {
+    const source = state.blocks.find((b) => b.id === sourceBlockId);
+    const lastWeek = source?.weeks[source.weeks.length - 1];
+    const week: Week = lastWeek
+      ? cloneWeek(lastWeek, 1)
+      : {
       weekNumber: 1,
       published: false,
       workouts: Array.from({ length: p }, (_, i) => ({
@@ -133,7 +139,8 @@ function CoachHome() {
     }
     setOpen(false);
     setName("");
-    toast.success("הבלוק נוצר");
+    setSourceBlockId("none");
+    toast.success(lastWeek ? "הבלוק נוצר — עדכן את המשקלים המסומנים באדום" : "הבלוק נוצר");
     navigate({ to: "/coach/block/$blockId", params: { blockId } });
   };
 
@@ -179,6 +186,27 @@ function CoachHome() {
                 <div className="space-y-2">
                   <Label>שם הבלוק</Label>
                   <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="לדוגמה: הכנה לקיץ" />
+                </div>
+                <div className="space-y-2">
+                  <Label>שכפול שבוע אחרון מבלוק קיים (אופציונלי)</Label>
+                  <Select value={sourceBlockId} onValueChange={setSourceBlockId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="התחל מאפס" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">התחל מאפס</SelectItem>
+                      {state.blocks
+                        .filter((b) => !traineeId || b.traineeId === traineeId)
+                        .map((b) => (
+                          <SelectItem key={b.id} value={b.id}>
+                            {b.name} · שבוע {b.weeks.length}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    השבוע האחרון יועתק לשבוע 1, והמשקלים יסומנו לעדכון חובה.
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
