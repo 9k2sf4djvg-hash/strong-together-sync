@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Check, Copy, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { ArrowRight, Check, Copy, Pencil, Plus, Send, Trash2, Rocket } from "lucide-react";
 import { emptyExercise, newSet, uid, useStore } from "@/lib/store";
+import { cloneWeek } from "@/lib/clone";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Block, Week, Workout } from "@/lib/types";
+import { EXERCISE_LIBRARY } from "@/lib/types";
 
 export const Route = createFileRoute("/coach/block/$blockId")({
   head: () => ({
@@ -42,10 +44,11 @@ export const Route = createFileRoute("/coach/block/$blockId")({
 
 function BlockPage() {
   const { blockId } = Route.useParams();
-  const { state, deleteBlock: removeBlock, user, updateBlock, notify, hydrated } = useStore();
+  const { state, deleteBlock: removeBlock, createBlock, user, updateBlock, notify, hydrated } = useStore();
   const navigate = useNavigate();
   const [editing, setEditing] = useState<{ week: number; workoutId: string } | null>(null);
   const [editBlockOpen, setEditBlockOpen] = useState(false);
+  const [newFromWeek, setNewFromWeek] = useState<Week | null>(null);
 
   useEffect(() => {
     if (hydrated && !user) navigate({ to: "/" });
@@ -77,33 +80,7 @@ function BlockPage() {
       toast.error("הגעת למספר השבועות של הבלוק");
       return;
     }
-    const copy: Week = {
-      weekNumber: block.weeks.length + 1,
-      published: false,
-      workouts: week.workouts.map((w) => ({
-        ...w,
-        id: uid(),
-        completedAt: null,
-        exercises: w.exercises.map((e) => ({
-          ...e,
-          id: uid(),
-          skipped: false,
-          skipReason: "",
-          sets: e.sets.map((s) => ({
-            ...s,
-            id: uid(),
-            actualReps: null,
-            actualWeight: null,
-            actualRpe: null,
-            videoId: null,
-            note: "",
-            skipped: false,
-            skipReason: "",
-            needsUpdate: true,
-          })),
-        })),
-      })),
-    };
+    const copy = cloneWeek(week, block.weeks.length + 1);
     updateBlock(block.id, (b) => ({ ...b, weeks: [...b.weeks, copy] }));
     toast.success(`שבוע ${copy.weekNumber} שוכפל — עדכן את השדות המסומנים באדום`);
   };
@@ -177,6 +154,39 @@ function BlockPage() {
           : w,
       ),
     }));
+  };
+
+  const deleteWorkout = (weekNumber: number, workout: Workout) => {
+    if (!window.confirm(`למחוק את האימון "${workout.title}"?`)) return;
+    updateBlock(block.id, (b) => ({
+      ...b,
+      weeks: b.weeks.map((w) =>
+        w.weekNumber === weekNumber
+          ? { ...w, workouts: w.workouts.filter((x) => x.id !== workout.id) }
+          : w,
+      ),
+    }));
+    toast.success("האימון נמחק");
+  };
+
+  const startNewBlockFrom = async (week: Week, name: string) => {
+    const first = cloneWeek(week, 1);
+    const newId = await createBlock({
+      coachId: block.coachId,
+      traineeId: block.traineeId,
+      name,
+      totalWeeks: block.totalWeeks,
+      workoutsPerWeek: block.workoutsPerWeek,
+      currentWeek: 1,
+      weeks: [first],
+    });
+    if (!newId) {
+      toast.error("יצירת הבלוק נכשלה");
+      return;
+    }
+    setNewFromWeek(null);
+    toast.success("בלוק חדש נוצר — עדכן משקלים בשדות האדומים");
+    navigate({ to: "/coach/block/$blockId", params: { blockId: newId } });
   };
 
   const deleteBlock = () => {
