@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Dumbbell, Loader2 } from "lucide-react";
+import { Dumbbell, Loader2, PlayCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { startDemo } from "@/lib/demo.functions";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +60,7 @@ function LoginPage() {
   const [name, setName] = useState("");
   const [role, setRole] = useState<"coach" | "trainee">("trainee");
   const [busy, setBusy] = useState(false);
+  const [demoBusy, setDemoBusy] = useState<"coach" | "trainee" | null>(null);
 
   useEffect(() => {
     if (!hydrated || loading || !user) return;
@@ -80,6 +82,20 @@ function LoginPage() {
     }
     if (result.redirected) return;
     setBusy(false);
+  };
+
+  const enterDemo = async (demoRole: "coach" | "trainee") => {
+    setDemoBusy(demoRole);
+    try {
+      const creds = await startDemo({ data: { role: demoRole } });
+      const { error } = await supabase.auth.signInWithPassword(creds);
+      if (error) throw error;
+      toast.success(demoRole === "coach" ? "נכנסת כמאמן דמו" : "נכנסת כמתאמן דמו");
+    } catch {
+      toast.error("כניסת הדמו נכשלה, נסה שוב");
+    } finally {
+      setDemoBusy(null);
+    }
   };
 
   const signIn = async (e: React.FormEvent) => {
@@ -133,6 +149,38 @@ function LoginPage() {
         </div>
 
         <div className="glass-card animate-fade-up space-y-3 rounded-3xl p-5">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="gap-2"
+              disabled={demoBusy !== null || busy}
+              onClick={() => void enterDemo("trainee")}
+            >
+              {demoBusy === "trainee" ? <Loader2 className="size-4 animate-spin" /> : <PlayCircle className="size-4" />}
+              דמו מתאמן
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className="gap-2"
+              disabled={demoBusy !== null || busy}
+              onClick={() => void enterDemo("coach")}
+            >
+              {demoBusy === "coach" ? <Loader2 className="size-4 animate-spin" /> : <PlayCircle className="size-4" />}
+              דמו מאמן
+            </Button>
+          </div>
+          <p className="text-center text-xs text-muted-foreground">
+            כניסה מהירה לחשבונות הדגמה — כולל בלוק אימונים לדוגמה.
+          </p>
+
+          <div className="flex items-center gap-3 py-1 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            או התחברות רגילה
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
           <Button
             type="button"
             variant="outline"
