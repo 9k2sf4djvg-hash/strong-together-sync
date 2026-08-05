@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Check, Copy, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { ArrowRight, Check, Copy, Pencil, Plus, Send, Trash2, Rocket } from "lucide-react";
 import { emptyExercise, newSet, uid, useStore } from "@/lib/store";
+import { cloneWeek } from "@/lib/clone";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Block, Week, Workout } from "@/lib/types";
+import { EXERCISE_LIBRARY } from "@/lib/types";
 
 export const Route = createFileRoute("/coach/block/$blockId")({
   head: () => ({
@@ -42,10 +44,11 @@ export const Route = createFileRoute("/coach/block/$blockId")({
 
 function BlockPage() {
   const { blockId } = Route.useParams();
-  const { state, deleteBlock: removeBlock, user, updateBlock, notify, hydrated } = useStore();
+  const { state, deleteBlock: removeBlock, createBlock, user, updateBlock, notify, hydrated } = useStore();
   const navigate = useNavigate();
   const [editing, setEditing] = useState<{ week: number; workoutId: string } | null>(null);
   const [editBlockOpen, setEditBlockOpen] = useState(false);
+  const [newFromWeek, setNewFromWeek] = useState<Week | null>(null);
 
   useEffect(() => {
     if (hydrated && !user) navigate({ to: "/" });
@@ -77,33 +80,7 @@ function BlockPage() {
       toast.error("הגעת למספר השבועות של הבלוק");
       return;
     }
-    const copy: Week = {
-      weekNumber: block.weeks.length + 1,
-      published: false,
-      workouts: week.workouts.map((w) => ({
-        ...w,
-        id: uid(),
-        completedAt: null,
-        exercises: w.exercises.map((e) => ({
-          ...e,
-          id: uid(),
-          skipped: false,
-          skipReason: "",
-          sets: e.sets.map((s) => ({
-            ...s,
-            id: uid(),
-            actualReps: null,
-            actualWeight: null,
-            actualRpe: null,
-            videoId: null,
-            note: "",
-            skipped: false,
-            skipReason: "",
-            needsUpdate: true,
-          })),
-        })),
-      })),
-    };
+    const copy = cloneWeek(week, block.weeks.length + 1);
     updateBlock(block.id, (b) => ({ ...b, weeks: [...b.weeks, copy] }));
     toast.success(`שבוע ${copy.weekNumber} שוכפל — עדכן את השדות המסומנים באדום`);
   };
@@ -179,6 +156,39 @@ function BlockPage() {
     }));
   };
 
+  const deleteWorkout = (weekNumber: number, workout: Workout) => {
+    if (!window.confirm(`למחוק את האימון "${workout.title}"?`)) return;
+    updateBlock(block.id, (b) => ({
+      ...b,
+      weeks: b.weeks.map((w) =>
+        w.weekNumber === weekNumber
+          ? { ...w, workouts: w.workouts.filter((x) => x.id !== workout.id) }
+          : w,
+      ),
+    }));
+    toast.success("האימון נמחק");
+  };
+
+  const startNewBlockFrom = async (week: Week, name: string) => {
+    const first = cloneWeek(week, 1);
+    const newId = await createBlock({
+      coachId: block.coachId,
+      traineeId: block.traineeId,
+      name,
+      totalWeeks: block.totalWeeks,
+      workoutsPerWeek: block.workoutsPerWeek,
+      currentWeek: 1,
+      weeks: [first],
+    });
+    if (!newId) {
+      toast.error("יצירת הבלוק נכשלה");
+      return;
+    }
+    setNewFromWeek(null);
+    toast.success("בלוק חדש נוצר — עדכן משקלים בשדות האדומים");
+    navigate({ to: "/coach/block/$blockId", params: { blockId: newId } });
+  };
+
   const deleteBlock = () => {
     if (!window.confirm(`למחוק את הבלוק "${block.name}"? הפעולה אינה הפיכה.`)) return;
     void removeBlock(block.id);
@@ -250,6 +260,9 @@ function BlockPage() {
                     <Button size="sm" variant="outline" onClick={() => duplicateWeek(week)}>
                       <Copy className="size-4" /> הכפל שבוע
                     </Button>
+                    <Button size="sm" variant="outline" onClick={() => setNewFromWeek(week)}>
+                      <Rocket className="size-4" /> שכפל והתחל בלוק חדש
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -266,11 +279,14 @@ function BlockPage() {
                 )}
                 <div className="grid gap-3 md:grid-cols-2">
                   {week.workouts.map((w) => (
-                    <button
+                    <div
                       key={w.id}
-                      onClick={() => setEditing({ week: week.weekNumber, workoutId: w.id })}
-                      className="rounded-xl border border-border bg-background p-3 text-start transition-colors hover:border-primary"
+                      className="relative rounded-xl border border-border bg-background transition-colors hover:border-primary"
                     >
+                      <button
+                        onClick={() => setEditing({ week: week.weekNumber, workoutId: w.id })}
+                        className="block w-full p-3 pe-12 text-start"
+                      >
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate font-semibold">{w.title}</span>
                         {w.completedAt ? (
@@ -286,7 +302,17 @@ function BlockPage() {
                       {w.exercises.some((e) => e.sets.some((s) => s.actualRpe != null || s.note || s.skipped)) && (
                         <p className="mt-1 text-xs text-warning">יש עדכוני מתאמן לצפייה</p>
                       )}
-                    </button>
+                      </button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`מחק אימון ${w.title}`}
+                        className="absolute end-1 top-1"
+                        onClick={() => deleteWorkout(week.weekNumber, w)}
+                      >
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
+                    </div>
                   ))}
                   <Button variant="outline" onClick={() => addWorkout(week.weekNumber)}>
                     <Plus className="size-4" /> הוסף אימון
@@ -339,7 +365,65 @@ function BlockPage() {
           }}
         />
       )}
+
+      {newFromWeek && (
+        <NewBlockFromWeekDialog
+          week={newFromWeek}
+          defaultName={`${block.name} — המשך`}
+          onClose={() => setNewFromWeek(null)}
+          onConfirm={(name) => void startNewBlockFrom(newFromWeek, name)}
+        />
+      )}
     </div>
+  );
+}
+
+function NewBlockFromWeekDialog({
+  week,
+  defaultName,
+  onClose,
+  onConfirm,
+}: {
+  week: Week;
+  defaultName: string;
+  onClose: () => void;
+  onConfirm: (name: string) => void;
+}) {
+  const [name, setName] = useState(defaultName);
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>בלוק חדש משבוע {week.weekNumber}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            השבוע ישוכפל כשבוע 1 של בלוק חדש לאותו מתאמן. כל המשקלים יסומנו באדום ויחייבו עדכון לפני
+            שליחה, וניתן לשנות או להוסיף תרגילים.
+          </p>
+          <div className="space-y-2">
+            <Label>שם הבלוק החדש</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>
+            ביטול
+          </Button>
+          <Button
+            onClick={() => {
+              if (!name.trim()) {
+                toast.error("יש למלא שם בלוק");
+                return;
+              }
+              onConfirm(name.trim());
+            }}
+          >
+            צור בלוק
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -778,7 +862,8 @@ function WorkoutEditorInner({
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               className="sm:flex-1"
-              placeholder="שם התרגיל"
+              list="exercise-library"
+              placeholder="שם התרגיל — בחר מהרשימה או כתוב חופשי"
               value={newExercise}
               onChange={(e) => setNewExercise(e.target.value)}
               onKeyDown={(e) => {
@@ -802,6 +887,11 @@ function WorkoutEditorInner({
             >
               <Plus className="size-4" /> הוסף תרגיל
             </Button>
+            <datalist id="exercise-library">
+              {EXERCISE_LIBRARY.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
           </div>
         </div>
 
