@@ -260,6 +260,9 @@ function BlockPage() {
                     <Button size="sm" variant="outline" onClick={() => duplicateWeek(week)}>
                       <Copy className="size-4" /> הכפל שבוע
                     </Button>
+                    <Button size="sm" variant="outline" onClick={() => setNewFromWeek(week)}>
+                      <Rocket className="size-4" /> שכפל והתחל בלוק חדש
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -276,11 +279,14 @@ function BlockPage() {
                 )}
                 <div className="grid gap-3 md:grid-cols-2">
                   {week.workouts.map((w) => (
-                    <button
+                    <div
                       key={w.id}
-                      onClick={() => setEditing({ week: week.weekNumber, workoutId: w.id })}
-                      className="rounded-xl border border-border bg-background p-3 text-start transition-colors hover:border-primary"
+                      className="relative rounded-xl border border-border bg-background transition-colors hover:border-primary"
                     >
+                      <button
+                        onClick={() => setEditing({ week: week.weekNumber, workoutId: w.id })}
+                        className="block w-full p-3 pe-12 text-start"
+                      >
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate font-semibold">{w.title}</span>
                         {w.completedAt ? (
@@ -296,7 +302,17 @@ function BlockPage() {
                       {w.exercises.some((e) => e.sets.some((s) => s.actualRpe != null || s.note || s.skipped)) && (
                         <p className="mt-1 text-xs text-warning">יש עדכוני מתאמן לצפייה</p>
                       )}
-                    </button>
+                      </button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`מחק אימון ${w.title}`}
+                        className="absolute end-1 top-1"
+                        onClick={() => deleteWorkout(week.weekNumber, w)}
+                      >
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
+                    </div>
                   ))}
                   <Button variant="outline" onClick={() => addWorkout(week.weekNumber)}>
                     <Plus className="size-4" /> הוסף אימון
