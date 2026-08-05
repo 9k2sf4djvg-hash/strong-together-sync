@@ -149,6 +149,38 @@ function LoginPage() {
         </div>
 
         <div className="glass-card animate-fade-up space-y-3 rounded-3xl p-5">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="gap-2"
+              disabled={demoBusy !== null || busy}
+              onClick={() => void enterDemo("trainee")}
+            >
+              {demoBusy === "trainee" ? <Loader2 className="size-4 animate-spin" /> : <PlayCircle className="size-4" />}
+              דמו מתאמן
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className="gap-2"
+              disabled={demoBusy !== null || busy}
+              onClick={() => void enterDemo("coach")}
+            >
+              {demoBusy === "coach" ? <Loader2 className="size-4 animate-spin" /> : <PlayCircle className="size-4" />}
+              דמו מאמן
+            </Button>
+          </div>
+          <p className="text-center text-xs text-muted-foreground">
+            כניסה מהירה לחשבונות הדגמה — כולל בלוק אימונים לדוגמה.
+          </p>
+
+          <div className="flex items-center gap-3 py-1 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            או התחברות רגילה
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
           <Button
             type="button"
             variant="outline"
