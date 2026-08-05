@@ -365,7 +365,65 @@ function BlockPage() {
           }}
         />
       )}
+
+      {newFromWeek && (
+        <NewBlockFromWeekDialog
+          week={newFromWeek}
+          defaultName={`${block.name} — המשך`}
+          onClose={() => setNewFromWeek(null)}
+          onConfirm={(name) => void startNewBlockFrom(newFromWeek, name)}
+        />
+      )}
     </div>
+  );
+}
+
+function NewBlockFromWeekDialog({
+  week,
+  defaultName,
+  onClose,
+  onConfirm,
+}: {
+  week: Week;
+  defaultName: string;
+  onClose: () => void;
+  onConfirm: (name: string) => void;
+}) {
+  const [name, setName] = useState(defaultName);
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>בלוק חדש משבוע {week.weekNumber}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            השבוע ישוכפל כשבוע 1 של בלוק חדש לאותו מתאמן. כל המשקלים יסומנו באדום ויחייבו עדכון לפני
+            שליחה, וניתן לשנות או להוסיף תרגילים.
+          </p>
+          <div className="space-y-2">
+            <Label>שם הבלוק החדש</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>
+            ביטול
+          </Button>
+          <Button
+            onClick={() => {
+              if (!name.trim()) {
+                toast.error("יש למלא שם בלוק");
+                return;
+              }
+              onConfirm(name.trim());
+            }}
+          >
+            צור בלוק
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
