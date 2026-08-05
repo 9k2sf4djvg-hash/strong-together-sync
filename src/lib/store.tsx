@@ -240,7 +240,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const existing = timers[b.id];
     if (existing) clearTimeout(existing);
     timers[b.id] = setTimeout(() => {
-      void supabase.from("blocks").update(fromBlock(b)).eq("id", b.id);
+      void (async () => {
+        const { error } = await supabase.from("blocks").update(fromBlock(b)).eq("id", b.id);
+        if (error) console.error("block save failed", error);
+      })();
     }, 400);
   }, []);
 
@@ -309,7 +312,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         n.toUserId === userId && !n.read ? { ...n, read: true } : n,
       ),
     }));
-    void supabase.from("notifications").update({ read: true }).eq("to_user_id", userId).eq("read", false);
+    void (async () => {
+      await supabase.from("notifications").update({ read: true }).eq("to_user_id", userId).eq("read", false);
+    })();
   }, []);
 
   const dismissNotification = useCallback((id: string) => {
@@ -317,7 +322,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ...s,
       notifications: s.notifications.map((n) => (n.id === id ? { ...n, dismissed: true } : n)),
     }));
-    void supabase.from("notifications").update({ dismissed: true }).eq("id", id);
+    void (async () => {
+      await supabase.from("notifications").update({ dismissed: true }).eq("id", id);
+    })();
   }, []);
 
   const createInviteCode = useCallback(async () => {
